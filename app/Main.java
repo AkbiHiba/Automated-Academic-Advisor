@@ -1,10 +1,18 @@
 package app;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import entities.ComparatorTool;
 import entities.Course;
 import entities.Edge;
@@ -13,9 +21,10 @@ import entities.Node;
 
 public class Main {
 
-        public static int nbOfSemesters = 6;
+        public static int maxSemesters = 4; // starts from 0
         public static int maxCrds = 16;
         public static int creditRequirement = 90;
+        public static Graph g;
 
         public static void main(String[] args) {
                 // all courses
@@ -119,7 +128,7 @@ public class Main {
                                 Arrays.asList(new Edge(nmth1, 1), new Edge(nmth305, 1), new Edge(ncsc380, 1))));
                 Node ncom203 = new Node(com203, new ArrayList<Edge>(Arrays.asList(new Edge(ncsc400, 0))));
                 Node neng202 = new Node(eng202, new ArrayList<Edge>(Arrays.asList(new Edge(ncsc400, 0))));
-                Graph g = new Graph();
+                g = new Graph();
 
                 g.addNode(ncsc243);
                 g.addNode(nhum1);
@@ -161,80 +170,161 @@ public class Main {
                 // compute reachability of the nodes
                 g.computeReachability();
 
+                HashMap<Integer, List<Node>> semesters = new HashMap<>(); // contains what nodes each semester
+                                                                          // has, s1[a,b,c], s2[e,f,g] ...etc
+
+                int currentLevel = 0;
+                int totalCredits = 0; // total amount of credits within the graduation plan
+
+                /******************************************************************************************************
+                 * INITIALIZATION OF GRAPH FINISHED
+                 ******************************************************************************************************/
+
+                // compute reachability of the nodes
+                g.computeReachability();
+
                 // perform first levelization
                 g.levelizeGraph();
                 HashMap<Integer, List<Node>> map = g.computeLevelMap(); // contains what nodes each level has,
                                                                         // level 0 [a,b,b], level 1 [e,f,g]
                                                                         // ...etc
 
-                ComparatorTool comparator = new ComparatorTool();
-                comparator.setStrategy("reachability");
-                for (Integer key : map.keySet()) {
-                        List<Node> nodesAtLevel = map.get(key);
-                        Collections.sort(nodesAtLevel, comparator); // sort based on reachability
-                        System.out.println("Level " + key + ": " + nodesAtLevel);
-                }
+                // System.out.println(map);
 
                 /******************************************************************************************************
                  * REACHABILITY AND LEVELIZATION OF GRAPH FINISHED- PROCEED TO SEMESTER
                  * SPLITTING
-                 */
+                 ******************************************************************************************************/
 
-                HashMap<Integer, List<Node>> semesters = new HashMap<>(); // contains what nodes each semester
-                                                                          // has, s1[a,b,c], s2[e,f,g] ...etc
-                int currentLevel = 0;
-                int totalCredits = 0; // total amount of credits within the graduation plan
+                boolean scheduleFound = scheduleCourses(g, map, semesters, currentLevel, totalCredits, 0);
 
-                for (int s = 0; s < nbOfSemesters; s++) { // for every semester
-
-                        // HEURISTICS OF MAJOR AND REACHABILITY
-                        comparator.setStrategy("major");
-                        Collections.sort(map.get(currentLevel), comparator);
-                        comparator.setStrategy("rechability");
-                        Collections.sort(map.get(currentLevel), comparator);
-
-                        int currentCredits = 0; // current amount of credits in the semester
-                        for (Node n : map.get(currentLevel)) // starts filling semester level by level
-                        {
-
-                                // TODO should have heuristics here
-                                if (currentCredits + n.getCourse().getCrds() <= maxCrds) {
-                                        List<Node> coursesAtSemester = semesters.getOrDefault(s, new ArrayList<>());
-                                        coursesAtSemester.add(n);
-                                        semesters.put(s, coursesAtSemester);
-                                        currentCredits += n.getCourse().getCrds();
-                                }
-
-                        }
-
-                        // All nodes in the level have been explored, level down all remaining courses
-                        // TODO: Can be optimized to avoid looping twice, but must be careful
-                        for (Node course : map.get(currentLevel)) {
-                                if (!semesters.get(s).contains(course)) {
-                                        course.setLevel(course.getLevel() + 1); // push one level down
-
-                                }
-                        }
-                        for (Node course : map.get(currentLevel)) {
-                                if (!semesters.get(s).contains(course)) {
-                                        g.levelizefromRoot(course); // push all levels below
-                                        map = g.computeLevelMap();
-                                }
-                        }
-
-                        System.out.println("semester " + s + ":" + semesters.get(s) + currentCredits);
-                        totalCredits += currentCredits;
-                        currentLevel += 1;
-
+                if (!scheduleFound) {
+                        System.out
+                                        .println("Failed to find a feasible schedule within " + maxSemesters
+                                                        + " semesters.");
+                } else {
+                        System.out.println("found");
                 }
-                // all 6 semesters have been completed, check if all credits were completed
 
-                if (totalCredits != creditRequirement) {
-                        System.out.println("Remaning classes could not fit within " + "nbOfSemesters"
-                                        + " number of semesters.\n Total completed credits is " + totalCredits
-                                        + " out of "
-                                        + creditRequirement);
+        }
+
+        public static HashMap<Integer, List<Node>> deepCopyHashMap(Map<Integer, List<Node>> originalMap) {
+                try {
+                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
+
+                        // Serialize the original map to the byte stream
+                        objectOutputStream.writeObject(originalMap);
+                        objectOutputStream.close();
+
+                        // Deserialize the byte stream to create a new copy of the map
+                        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+                        ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+
+                        // Return the deep copy of the map
+                        return (HashMap<Integer, List<Node>>) objectInputStream.readObject();
+                } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                        return null;
                 }
+        }
+
+        /******************************************************************************************************
+         * RECURSIVE FUNCTION FOR SCHEDULE GENERATION It backtracks to previous semester
+         * when a solution
+         * isn't found. Uses ordering by reachability. So far, it implements only the
+         * max Credits
+         * heuristic. It creates a new copy of the grapha and levels at every recursion,
+         * which is
+         * terrible.
+         ******************************************************************************************************/
+
+        private static boolean scheduleCourses(Graph g, HashMap<Integer, List<Node>> m,
+                        HashMap<Integer, List<Node>> semesters, int currentLevel, int totalCredits,
+                        int currentSemester) {
+
+                // if finished the creditRequirements, great
+                if (totalCredits == creditRequirement) {
+                        // print resulting projection plan
+                        for (Integer key : semesters.keySet()) {
+                                int crds = 0;
+                                for (Node n : semesters.get(key)) {
+                                        crds += n.getCourse().getCrds();
+                                }
+                                System.out.println(
+                                                "Semester " + (key + 1) + " (" + crds + "crds) " + semesters.get(key));
+                        }
+                        return true;
+                }
+                // if requirements aren't finished but there's still semesters to add
+                if (currentSemester <= maxSemesters) {
+                        // for this currentsemester and level
+
+                        int currentMaxCrds;
+                        int currentCredits;
+                        int[] creditsHeuristic = new int[] { maxCrds, 18 };
+                        if (currentSemester == maxSemesters) { // assign max credits as 21 if this is the last semester
+                                creditsHeuristic = new int[] { maxCrds, 18, 21 };
+                        }
+
+                        for (int i : creditsHeuristic) {
+                                // try course assignment with 16 crdts first, the try other options
+                                currentCredits = 0;
+                                currentMaxCrds = i;
+                                Graph graph = g.deepCopy();
+
+                                // sort by reachability
+                                HashMap<Integer, List<Node>> map = graph.computeLevelMap();
+                                ComparatorTool comparator = new ComparatorTool();
+                                comparator.setStrategy("reachability");
+                                Collections.sort(map.get(currentLevel), comparator);
+
+                                // starts filling semester level by level
+                                for (Node n : map.get(currentLevel)) {
+
+                                        if (currentCredits + n.getCourse().getCrds() <= currentMaxCrds) {
+
+                                                List<Node> coursesAtCurrentSemester = semesters.getOrDefault(
+                                                                currentSemester,
+                                                                new ArrayList<>());
+                                                coursesAtCurrentSemester.add(n);
+                                                semesters.put(currentSemester, coursesAtCurrentSemester);
+                                                currentCredits += n.getCourse().getCrds();
+                                        }
+
+                                }
+
+                                for (Node course : map.get(currentLevel)) {
+                                        if (!semesters.get(currentLevel).contains(course)) {
+                                                course.setLevel(course.getLevel() + 1); // push one level down
+
+                                        }
+                                }
+
+                                for (Node course : map.get(currentLevel)) {
+
+                                        if (!semesters.get(currentSemester).contains(course)) {
+                                                graph.levelizefromRoot(course); // push all levels below
+                                                map = graph.computeLevelMap();
+                                        }
+                                }
+
+                                // move to next semester
+                                if (scheduleCourses(graph, map, semesters, currentLevel + 1,
+                                                totalCredits + currentCredits,
+                                                currentSemester + 1) == true)
+                                        return true;
+                                // if didn't work, backtrack and change combination of heuristics for this
+                                // semester
+                                semesters.remove(currentSemester);
+                        }
+                }
+
+                // no more semester, and plan was incomplete
+                // System.out.println("returned false at semester " + currentSemester + " : (" +
+                // totalCredits
+                // + "crds) -> " + semesters);
+                return false;
 
         }
 }

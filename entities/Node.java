@@ -1,17 +1,18 @@
 package entities;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-public class Node
-{
+
+public class Node implements Serializable {
   private Course course;
   private List<Edge> neighbors;
   private int reachability;
-  private boolean visited; //this will be relevant when we will need to finish a projection plan rather than start it from scratch
+  private boolean visited; // this will be relevant when we will need to finish a projection plan rather
+                           // than start it from scratch
   private int level;
 
-  public Node(Course course, List<Edge> arrayList)
-  {
+  public Node(Course course, List<Edge> arrayList) {
     super();
     this.course = course;
     this.neighbors = arrayList;
@@ -20,77 +21,62 @@ public class Node
 
   }
 
-  public Course getCourse()
-  {
+  public Course getCourse() {
     return course;
   }
 
-  public void setCourse(Course course)
-  {
+  public void setCourse(Course course) {
     this.course = course;
   }
 
-  public List<Edge> getNeighbors()
-  {
+  public List<Edge> getNeighbors() {
     return neighbors;
   }
 
-  public List<Node> getNeighborNodes()
-  {
+  public List<Node> getNeighborNodes() {
     List<Node> nodes = new ArrayList<Node>();
 
-    for (Edge edge : getNeighbors())
-    {
+    for (Edge edge : getNeighbors()) {
       nodes.add(edge.getNode());
     }
     return nodes;
   }
 
-  public void setNeighbors(List<Edge> neighbors)
-  {
+  public void setNeighbors(List<Edge> neighbors) {
     this.neighbors = neighbors;
   }
 
-  public void addNeighbor(Node neighbor, int weight)
-  {
+  public void addNeighbor(Node neighbor, int weight) {
     this.neighbors.add(new Edge(neighbor, weight));
   }
 
-  public int getReachability()
-  {
+  public int getReachability() {
     return reachability;
   }
 
-  public void setReachability(int reachability)
-  {
+  public void setReachability(int reachability) {
     this.reachability = reachability;
   }
 
-  public boolean getVisited()
-  {
+  public boolean getVisited() {
     return visited;
   }
 
-  public void setVisited(boolean b)
-  {
+  public void setVisited(boolean b) {
     this.visited = b;
   }
 
-  public int getLevel()
-  {
+  public int getLevel() {
     return level;
   }
 
-  public void setLevel(int level)
-  {
+  public void setLevel(int level) {
     this.level = level;
   }
 
   @Override
-  public String toString()
-  {
-    return course.getName();
+  public String toString() {
+    return course.getName() + "(" + course.getCrds() + ")";
   }
 
 }
-

@@ -1,5 +1,10 @@
 package entities;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -8,7 +13,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
-public class Graph {
+public class Graph implements Serializable {
   private List<Node> nodes;
 
   public Graph() {
@@ -35,7 +40,8 @@ public class Graph {
   }
 
   /**
-   * This function traverses all nodes and calulcates their rechability.
+   * TODO : Compute reachability of all nodes in the graph.
+   * reachability is updated in each node
    */
   public void computeReachability() {
     for (Node node : nodes) {
@@ -120,6 +126,21 @@ public class Graph {
 
         }
       }
+    }
+  }
+
+  public Graph deepCopy() {
+    try {
+      ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+      ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
+      objectOutputStream.writeObject(this);
+
+      ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+      ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+      return (Graph) objectInputStream.readObject();
+    } catch (Exception e) {
+      e.printStackTrace();
+      return null;
     }
   }
 
