@@ -14,8 +14,10 @@ import entities.Node;
 public class Main {
 
         public static int nbOfSemesters = 6;
-        public static int maxCrds = 16;
-        public static int creditRequirement = 90;
+        public static int creditRequirement = 92;
+        public static final int REGULAR_SEMESTER_CREDIT_LIMIT = 16;
+        public static final int FINAL_SEMESTER_CREDIT_LIMIT = 21;
+        public static final int MAJOR_CREDITS_SEMESTER_LIMIT = 13;
 
         public static void main(String[] args) {
                 // all courses
@@ -30,6 +32,8 @@ public class Main {
                                 new ArrayList<Course>(Arrays.asList(csc243)));
                 Course csc245 = new Course("CP2", true, true, false, 3,
                                 new ArrayList<Course>(Arrays.asList(csc243)));
+                Course csc245L = new Course("CP2 LAB", true, true, true, 1, new ArrayList<Course>(),
+                                new ArrayList<Course>(Arrays.asList(csc245)));
                 Course mth207 = new Course("Discrete 1", true, true, false, 3, new ArrayList<Course>());
                 Course csc230 = new Course("CO", true, true, false, 3, new ArrayList<Course>(),
                                 new ArrayList<Course>(Arrays.asList(csc245, mth207)));
@@ -37,6 +41,8 @@ public class Main {
                                 new ArrayList<Course>(Arrays.asList(csc230)));
                 Course csc310 = new Course("CP3", true, true, false, 3,
                                 new ArrayList<Course>(Arrays.asList(csc245, mth207)));
+                Course csc310L = new Course("CP3 LAB", true, true, true, 1, new ArrayList<Course>(),
+                                new ArrayList<Course>(Arrays.asList(csc310)));
                 Course csc375 = new Course("Database Management", true, true, false, 3,
                                 new ArrayList<Course>(Arrays.asList(csc245, mth207)));
                 Course csc326 = new Course("Operating Systems", true, true, false, 3,
@@ -99,8 +105,10 @@ public class Main {
                 Node ncsc340 = new Node(csc340,
                                 new ArrayList<Edge>(Arrays.asList(new Edge(ncsc400, 1), new Edge(ncsc500, 0))));
                 Node ncsc230L = new Node(csc230L, new ArrayList<Edge>());
+                Node ncsc310L = new Node(csc310L, new ArrayList<Edge>());
                 Node ncsc310 = new Node(csc310,
                                 new ArrayList<Edge>(Arrays.asList(new Edge(ncsc1, 1), new Edge(ncsc2, 1),
+                                                new Edge(ncsc310L, 0),
                                                 new Edge(ncsc3, 1), new Edge(ncsc4, 1), new Edge(ncsc5, 1),
                                                 new Edge(nparallel, 1))));
                 Node ncsc375 = new Node(csc375,
@@ -110,8 +118,10 @@ public class Main {
                                 new ArrayList<Edge>(Arrays.asList(new Edge(nparallel, 1), new Edge(ncsc430, 1))));
                 Node ncsc230 = new Node(csc230,
                                 new ArrayList<Edge>(Arrays.asList(new Edge(ncsc326, 1), new Edge(ncsc230L, 0))));
-                Node ncsc245 = new Node(csc245, new ArrayList<Edge>(Arrays.asList(new Edge(ncsc310, 1),
-                                new Edge(ncsc326, 1), new Edge(ncsc375, 1), new Edge(ncsc230, 0))));
+                Node ncsc245L = new Node(csc245L, new ArrayList<Edge>());
+                Node ncsc245 = new Node(csc245,
+                                new ArrayList<Edge>(Arrays.asList(new Edge(ncsc310, 1), new Edge(ncsc245L, 0),
+                                                new Edge(ncsc326, 1), new Edge(ncsc375, 1), new Edge(ncsc230, 0))));
                 Node nmth207 = new Node(mth207, new ArrayList<Edge>(Arrays.asList(new Edge(ncsc380, 1),
                                 new Edge(ncsc375, 1), new Edge(ncsc310, 1), new Edge(ncsc230, 0))));
                 Node ncsc243 = new Node(csc243, new ArrayList<Edge>(Arrays.asList(new Edge(ncsc245, 1))));
@@ -134,10 +144,12 @@ public class Main {
                 g.addNode(nbio209);
                 g.addNode(ncsc243L);
                 g.addNode(ncsc245);
+                g.addNode(ncsc245L);
                 g.addNode(nmth207);
                 g.addNode(ncsc230);
                 g.addNode(ncsc230L);
                 g.addNode(ncsc310);
+                g.addNode(ncsc310L);
                 g.addNode(ncsc375);
                 g.addNode(ncsc326);
                 g.addNode(nparallel);
@@ -184,7 +196,6 @@ public class Main {
                                                                           // has, s1[a,b,c], s2[e,f,g] ...etc
                 int currentLevel = 0;
                 int totalCredits = 0; // total amount of credits within the graduation plan
-
                 for (int s = 0; s < nbOfSemesters; s++) { // for every semester
 
                         // HEURISTICS OF MAJOR AND REACHABILITY
@@ -193,37 +204,65 @@ public class Main {
                         comparator.setStrategy("rechability");
                         Collections.sort(map.get(currentLevel), comparator);
 
-                        int currentCredits = 0; // current amount of credits in the semester
+                        int currentSemCredits = 0; // current amount of credits in the semester
+                        int majorCredits = 0; // Initialize major credits in the semester
+
+                        // if it is the last semester allow up to 21, else 16
+                        int creditLimit = (s == nbOfSemesters - 1) ? FINAL_SEMESTER_CREDIT_LIMIT
+                                        : REGULAR_SEMESTER_CREDIT_LIMIT;
+
+                        boolean hasDeferredCourses = false;
+
                         for (Node n : map.get(currentLevel)) // starts filling semester level by level
                         {
 
-                                // TODO should have heuristics here
-                                if (currentCredits + n.getCourse().getCrds() <= maxCrds) {
-                                        List<Node> coursesAtSemester = semesters.getOrDefault(s, new ArrayList<>());
+                                int courseCredits = n.getCourse().getCrds();
+
+                                // if adding this course is not a problem and (either this is not a major course
+                                // or it is but adding it won't exceed the max number of major per sem)
+                                if ((currentSemCredits + courseCredits <= creditLimit) &&
+                                                (!n.getCourse().isMajor() || (majorCredits
+                                                                + courseCredits <= MAJOR_CREDITS_SEMESTER_LIMIT))) {
+
+                                        List<Node> coursesAtSemester = semesters.getOrDefault(s,
+                                                        new ArrayList<>());
                                         coursesAtSemester.add(n);
                                         semesters.put(s, coursesAtSemester);
-                                        currentCredits += n.getCourse().getCrds();
+                                        currentSemCredits += courseCredits;
+                                        if (n.getCourse().isMajor()) {
+                                                majorCredits += courseCredits;
+                                        }
+                                } else {
+                                        // If the course is a major course and we've reached the major credits limit,
+                                        // or if adding the course would exceed the general credit limit, defer it.
+                                        hasDeferredCourses = true;
                                 }
 
                         }
 
-                        // All nodes in the level have been explored, level down all remaining courses
-                        // TODO: Can be optimized to avoid looping twice, but must be careful
-                        for (Node course : map.get(currentLevel)) {
-                                if (!semesters.get(s).contains(course)) {
-                                        course.setLevel(course.getLevel() + 1); // push one level down
+                        // After trying to assign all courses at the current level to this semester,
+                        // handle deferred courses by pushing them to the next level.
+                        if (hasDeferredCourses) {
+                                for (Node course : map.get(currentLevel)) {
+                                        if (!semesters.get(s).contains(course)) {
+                                                // Only increase the level of courses that were not added
+                                                // due to reaching the credit limit.
+                                                course.setLevel(course.getLevel() + 1); // push one level down
+                                        }
+                                }
 
+                                for (Node course : map.get(currentLevel)) {
+                                        if (!semesters.get(s).contains(course)) {
+                                                g.levelizefromRoot(course); // Re-levelize to account for deferred
+                                                                            // courses
+                                                map = g.computeLevelMap(); // Re-compute the level map after
+                                                                           // re-levelizing
+                                        }
                                 }
                         }
-                        for (Node course : map.get(currentLevel)) {
-                                if (!semesters.get(s).contains(course)) {
-                                        g.levelizefromRoot(course); // push all levels below
-                                        map = g.computeLevelMap();
-                                }
-                        }
 
-                        System.out.println("semester " + s + ":" + semesters.get(s) + currentCredits);
-                        totalCredits += currentCredits;
+                        System.out.println("semester " + s + ":" + semesters.get(s) + currentSemCredits);
+                        totalCredits += currentSemCredits;
                         currentLevel += 1;
 
                 }
