@@ -189,75 +189,72 @@ public class Main {
                                                                           // has, s1[a,b,c], s2[e,f,g] ...etc
                 int currentLevel = 0;
                 int totalCredits = 0; // total amount of credits within the graduation plan
-                for (int s = 0; s < nbOfSemesters; s++) { // for every semester
+                HashMap<Integer, List<Node>> deferredCourses = new HashMap<>();
 
-                        // HEURISTICS OF MAJOR AND REACHABILITY
-                        comparator.setStrategy("major");
-                        Collections.sort(map.get(currentLevel), comparator);
-                        comparator.setStrategy("rechability");
-                        Collections.sort(map.get(currentLevel), comparator);
-
-                        int currentSemCredits = 0; // current amount of credits in the semester
-                        int majorCredits = 0; // Initialize major credits in the semester
-
-                        // if it is the last semester allow up to 21, else 16
+                // Iterate over each semester to allocate courses
+                for (int s = 0; s < nbOfSemesters; s++) {
+                        // Define the credit limit for the semester (higher for the final semester)
                         int creditLimit = (s == nbOfSemesters - 1) ? FINAL_SEMESTER_CREDIT_LIMIT
                                         : REGULAR_SEMESTER_CREDIT_LIMIT;
 
-                        boolean hasDeferredCourses = false;
+                        // Initialize counters for the current semester
+                        int currentSemCredits = 0;
+                        int majorCredits = 0;
 
-                        for (Node n : map.get(currentLevel)) // starts filling semester level by level
-                        {
+                        // Prepare the list of courses for this semester by combining deferred and new
+                        // courses
+                        List<Node> coursesToConsider = new ArrayList<>(
+                                        deferredCourses.getOrDefault(currentLevel, new ArrayList<>()));
+                        List<Node> newCourses = map.get(currentLevel);
+                        if (newCourses != null) {
+                                coursesToConsider.addAll(newCourses);
+                        }
+                        deferredCourses.remove(currentLevel); // Clear deferred courses for the current level
 
+                        // Sort the courses for this semester based on major status and reachability
+                        comparator.setStrategy("major");
+                        Collections.sort(coursesToConsider, comparator);
+                        comparator.setStrategy("reachability");
+                        Collections.sort(coursesToConsider, comparator);
+
+                        // List to store courses added to this semester
+                        List<Node> coursesAddedToSemester = new ArrayList<>();
+
+                        // Process each course for potential inclusion in the current semester
+                        for (Node n : coursesToConsider) {
                                 int courseCredits = n.getCourse().getCrds();
+                                boolean isMajorCourse = n.getCourse().isMajor();
 
-                                // if adding this course is not a problem and (either this is not a major course
-                                // or it is but adding it won't exceed the max number of major per sem)
-                                if ((currentSemCredits + courseCredits <= creditLimit) &&
-                                                (!n.getCourse().isMajor() || (majorCredits
-                                                                + courseCredits <= MAJOR_CREDITS_SEMESTER_LIMIT))) {
-
-                                        List<Node> coursesAtSemester = semesters.getOrDefault(s,
-                                                        new ArrayList<>());
-                                        coursesAtSemester.add(n);
-                                        semesters.put(s, coursesAtSemester);
-                                        currentSemCredits += courseCredits;
-                                        if (n.getCourse().isMajor()) {
-                                                majorCredits += courseCredits;
+                                // Check if the course fits within the semester's credit limit
+                                if (currentSemCredits + courseCredits <= creditLimit) {
+                                        // Check for major course credit limit
+                                        if (!isMajorCourse || (majorCredits
+                                                        + courseCredits <= MAJOR_CREDITS_SEMESTER_LIMIT)) {
+                                                coursesAddedToSemester.add(n); // Add to the semester
+                                                currentSemCredits += courseCredits;
+                                                if (isMajorCourse) {
+                                                        majorCredits += courseCredits; // Update major credits if it's a
+                                                                                       // major course
+                                                }
+                                        } else {
+                                                // Defer major course if it exceeds major credit limit
+                                                deferredCourses.computeIfAbsent(currentLevel + 1,
+                                                                k -> new ArrayList<>()).add(n);
                                         }
                                 } else {
-                                        // If the course is a major course and we've reached the major credits limit,
-                                        // or if adding the course would exceed the general credit limit, defer it.
-                                        hasDeferredCourses = true;
-                                }
-
-                        }
-
-                        // After trying to assign all courses at the current level to this semester,
-                        // handle deferred courses by pushing them to the next level.
-                        if (hasDeferredCourses) {
-                                for (Node course : map.get(currentLevel)) {
-                                        if (!semesters.get(s).contains(course)) {
-                                                // Only increase the level of courses that were not added
-                                                // due to reaching the credit limit.
-                                                course.setLevel(course.getLevel() + 1); // push one level down
-                                        }
-                                }
-
-                                for (Node course : map.get(currentLevel)) {
-                                        if (!semesters.get(s).contains(course)) {
-                                                g.levelizefromRoot(course); // Re-levelize to account for deferred
-                                                                            // courses
-                                                map = g.computeLevelMap(); // Re-compute the level map after
-                                                                           // re-levelizing
-                                        }
+                                        // Defer the course if it exceeds the general credit limit
+                                        deferredCourses.computeIfAbsent(currentLevel + 1, k -> new ArrayList<>())
+                                                        .add(n);
                                 }
                         }
 
+                        // Update the semesters map with the courses planned for this semester
+                        semesters.put(s, coursesAddedToSemester);
                         System.out.println("semester " + s + ":" + semesters.get(s) + currentSemCredits);
-                        totalCredits += currentSemCredits;
-                        currentLevel += 1;
 
+                        // Update the total credits and proceed to the next level
+                        totalCredits += currentSemCredits;
+                        currentLevel++;
                 }
                 // all 6 semesters have been completed, check if all credits were completed
 
