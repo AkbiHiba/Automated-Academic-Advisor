@@ -14,14 +14,11 @@ public class Course {
   private boolean required;
   private boolean major;
   private boolean isLab;
-  private Course lab;
   private int crds;
   private List<Course> prereq;
   private List<Course> coreq;
 
   // constructor
-  // when using this constructor since there is no list of coreq passed, it could
-  // either be a normal course or a lab itself
   public Course(String name, boolean required, boolean major, boolean isLab, int crds,
       List<Course> prereq) {
     super();
@@ -29,7 +26,6 @@ public class Course {
     this.required = required;
     this.major = major;
     this.isLab = isLab;
-    // this.lab = lab;
     this.crds = crds;
     this.prereq = prereq;
   }
@@ -76,14 +72,6 @@ public class Course {
 
   public void setisLab(boolean isLab) {
     this.isLab = isLab;
-  }
-
-  public Course getLab() {
-    return lab;
-  }
-
-  public void setLab(Course lab) {
-    this.lab = lab;
   }
 
   public int getCrds() {
