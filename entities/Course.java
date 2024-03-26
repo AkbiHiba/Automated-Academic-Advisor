@@ -1,6 +1,7 @@
 package entities;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -9,34 +10,38 @@ import java.util.List;
  * seperate objects just fr the sake of clarity, because a course has many
  * unecessary details we
  * don't care about during traversal liek the full name of the course ..etc.
+ * 
  */
 public class Course implements Serializable {
   private String name;
   private boolean required;
   private boolean major;
-  private boolean lab;
+  private boolean isLab; // whether the course is a lab or not
+  private Course lab; // If course is a lab, this is the course of the lab. If this is a course, this
+                      // is the lab of that course.
   private int crds;
   private List<Course> prereq;
   private List<Course> coreq;
 
   // constructor
-  public Course(String name, boolean required, boolean major, boolean lab, int crds, List<Course> prereq) {
+  public Course(String name, boolean required, boolean major, boolean isLab, int crds, List<Course> prereq) {
     super();
     this.name = name;
     this.required = required;
     this.major = major;
-    this.lab = lab;
+    this.isLab = isLab;
     this.crds = crds;
     this.prereq = prereq;
+    this.coreq = new ArrayList<Course>();
   }
 
-  public Course(String name, boolean required, boolean major, boolean lab, int crds, List<Course> prereq,
+  public Course(String name, boolean required, boolean major, boolean isLab, int crds, List<Course> prereq,
       List<Course> coreq) {
     super();
     this.name = name;
     this.required = required;
     this.major = major;
-    this.lab = lab;
+    this.isLab = isLab;
     this.crds = crds;
     this.prereq = prereq;
     this.coreq = coreq;
@@ -67,11 +72,39 @@ public class Course implements Serializable {
   }
 
   public boolean isLab() {
-    return lab;
+    return isLab;
   }
 
-  public void setLab(boolean lab) {
-    this.lab = lab;
+  public void setisLab(boolean lab) {
+    this.isLab = lab;
+  }
+
+  /** set the lab of a course */
+  public void setLab(Course lab) {
+    if (!this.isLab)
+      this.lab = lab;
+  }
+
+  /** set the course of a lab */
+  public void setCourse(Course course) {
+    if (this.isLab)
+      this.lab = course;
+  }
+
+  /** get the lab of a course */
+  public Course getLab() {
+    if (!this.isLab)
+      return lab;
+    else
+      return null;
+  }
+
+  /** get the course of a lab */
+  public Course getCourse() {
+    if (this.isLab)
+      return lab;
+    else
+      return null;
   }
 
   public int getCrds() {
@@ -96,6 +129,10 @@ public class Course implements Serializable {
 
   public void setCoreq(List<Course> coreq) {
     this.coreq = coreq;
+  }
+
+  public String toString() {
+    return name;
   }
 
 }
