@@ -194,11 +194,9 @@ public class Main {
                 // compute reachability of the nodes
                 g.computeReachability();
 
-                HashMap<Integer, List<Node>> semesters = new HashMap<>(); // contains what nodes each semester
-                                                                          // has, s1[a,b,c], s2[e,f,g] ...etc
-
-                int currentLevel = 0;
-                int totalCredits = 0; // total amount of credits within the graduation plan
+                // HashMap<Integer, List<Node>> semesters = new HashMap<>(); // contains what
+                // nodes each semester
+                // has, s1[a,b,c], s2[e,f,g] ...etc
 
                 /******************************************************************************************************
                  * INITIALIZATION OF GRAPH FINISHED
@@ -220,16 +218,12 @@ public class Main {
                  * SPLITTING
                  ******************************************************************************************************/
 
-                boolean scheduleFound = scheduleCourses(g, map, semesters, currentLevel, totalCredits, 0);
-
-                if (!scheduleFound) {
-                        System.out
-                                        .println("Failed to find a feasible schedule within " + maxSemesters
-                                                        + " semesters.");
+                boolean scheduleFound = runSchedulingAlgorithm(g, map);
+                if (scheduleFound) {
+                        System.out.println("Schedule found.");
                 } else {
-                        System.out.println("found");
+                        System.out.println("No feasible schedule found.");
                 }
-
         }
 
         public static HashMap<Integer, List<Node>> deepCopyHashMap(Map<Integer, List<Node>> originalMap) {
@@ -278,10 +272,24 @@ public class Main {
          * terrible.
          ******************************************************************************************************/
 
+        public static boolean runSchedulingAlgorithm(Graph g, HashMap<Integer, List<Node>> map) {
+                HashMap<Integer, List<Node>> semesters = new HashMap<>();
+                boolean scheduleFound;
+
+                // First run with regular limits
+                scheduleFound = scheduleCourses(g, map, semesters, 0, 0, 0, false);
+                if (!scheduleFound) {
+                        // Second run, allow 21 credits in the last semester
+                        semesters.clear(); // Reset the semesters
+                        scheduleFound = scheduleCourses(g, map, semesters, 0, 0, 0, true);
+                }
+
+                return scheduleFound;
+        }
+
         private static boolean scheduleCourses(Graph g, HashMap<Integer, List<Node>> m,
                         HashMap<Integer, List<Node>> semesters, int currentLevel, int totalCredits,
-                        int currentSemester) {
-
+                        int currentSemester, boolean allowExtraCreditsInLastSemester) {
                 // if finished the creditRequirements, great
                 if (totalCredits == TOTAL_CREDIT_REQUIREMENTS) {
                         // print resulting projection plan
@@ -296,16 +304,29 @@ public class Main {
                         }
                         return true;
                 }
+
                 // if requirements aren't finished but there's still semesters to add
                 if (currentSemester <= maxSemesters) {
                         // for this currentsemester and level
 
                         int currentMaxCrds;
                         int currentCredits;
-                        int[] creditsHeuristic = new int[] { RECOMMENDED_CREDIT_LIMIT, REGULAR_SEMESTER_CREDIT_LIMIT };
-                        if (currentSemester == maxSemesters) { // assign max credits as 21 if this is the last semester
-                                creditsHeuristic = new int[] { RECOMMENDED_CREDIT_LIMIT, REGULAR_SEMESTER_CREDIT_LIMIT,
-                                                FINAL_SEMESTER_CREDIT_LIMIT };
+
+                        // Set credit limits for the current semester
+                        int[] creditsHeuristic;
+                        if (currentSemester < maxSemesters) {
+                                // For all semesters except the last, use regular credit limits
+                                creditsHeuristic = new int[] { RECOMMENDED_CREDIT_LIMIT,
+                                                REGULAR_SEMESTER_CREDIT_LIMIT };
+                        } else {
+                                // For the last semester, check if extra credits are allowed
+                                if (allowExtraCreditsInLastSemester) {
+                                        creditsHeuristic = new int[] { RECOMMENDED_CREDIT_LIMIT,
+                                                        REGULAR_SEMESTER_CREDIT_LIMIT, FINAL_SEMESTER_CREDIT_LIMIT };
+                                } else {
+                                        creditsHeuristic = new int[] { RECOMMENDED_CREDIT_LIMIT,
+                                                        REGULAR_SEMESTER_CREDIT_LIMIT };
+                                }
                         }
 
                         for (int i : creditsHeuristic) {
@@ -314,11 +335,14 @@ public class Main {
                                 currentMaxCrds = i;
                                 Graph graph = g.deepCopy();
 
-                                // sort by reachability
+                                // redoing the level map based on the new courses and sorting each level by
+                                // reachability
                                 HashMap<Integer, List<Node>> map = graph.computeLevelMap();
                                 ComparatorTool comparator = new ComparatorTool();
                                 comparator.setStrategy("reachability");
                                 Collections.sort(map.get(currentLevel), comparator);
+
+                                // System.out.println(map);
 
                                 List<Node> coursesToConsider = map.get(currentLevel); // putting them here so that we
                                                                                       // can
@@ -331,7 +355,8 @@ public class Main {
                                         // System.out.println(currentLevel + ":" + n);
                                         if (currentCredits + n.getCourse().getCrds() <= currentMaxCrds) {
                                                 // LAB MANDATORY HEURISTIC
-                                                boolean hasLab = n.getCourse().getLab() != null;
+                                                boolean hasLab = n.getCourse().getLab() != null; // has a course or a
+                                                                                                 // lab
                                                 boolean isLab = n.getCourse().isLab();
 
                                                 if (isLab || hasLab)
@@ -393,6 +418,7 @@ public class Main {
 
                                         }
                                 }
+
                                 for (Node course : map.get(currentLevel)) {
 
                                         if (!semesters.get(currentSemester).contains(course)) {
@@ -401,26 +427,39 @@ public class Main {
                                         }
                                 }
 
+                                System.out.println("******");
+                                for (Integer key : semesters.keySet()) {
+                                        int crds = 0;
+                                        for (Node n : semesters.get(key)) {
+                                                crds += n.getCourse().getCrds();
+                                        }
+                                        System.out.println("Semester " + (key + 1) + " (" + crds + "crds) "
+                                                        + semesters.get(key));
+                                }
+
                                 // move to next semester
                                 if (scheduleCourses(graph, map, semesters, currentLevel + 1,
                                                 totalCredits + currentCredits,
-                                                currentSemester + 1) == true)
+                                                (currentSemester + 1), allowExtraCreditsInLastSemester))
                                         return true;
                                 // if didn't work, backtrack and change combination of heuristics for this
                                 // semester
                                 semesters.remove(currentSemester);
                         }
+
                 }
 
                 // no more semester, and plan was incomplete
-                System.out.println("******RETURNED FALSE AT " + currentSemester + "(" + totalCredits + ")");
-                for (Integer key : semesters.keySet()) {
-                        int crds = 0;
-                        for (Node n : semesters.get(key)) {
-                                crds += n.getCourse().getCrds();
-                        }
-                        System.out.println("Semester " + (key + 1) + " (" + crds + "crds) " + semesters.get(key));
-                }
+                System.out.println("!!!!!!!!!!!!!!!!!!!!!!! RETURNED FALSE AT " + (currentSemester + 1) + "("
+                                + totalCredits + ")");
+                // for (Integer key : semesters.keySet()) {
+                // int crds = 0;
+                // for (Node n : semesters.get(key)) {
+                // crds += n.getCourse().getCrds();
+                // }
+                // System.out.println("Semester " + (key + 1) + " (" + crds + "crds) " +
+                // semesters.get(key));
+                // }
                 return false;
 
         }
