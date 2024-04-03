@@ -205,7 +205,7 @@ public class Main {
                  ******************************************************************************************************/
 
                 // compute reachability of the nodes
-                g.computeReachability();
+                // g.computeReachability();
 
                 // perform first levelization
                 g.levelizeGraph();
