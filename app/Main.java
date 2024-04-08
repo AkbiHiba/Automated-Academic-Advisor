@@ -24,7 +24,7 @@ import entities.Semester;
  */
 public class Main {
 
-        public static int maxSemesters = 5; // max regular semesters allowed. starts from 1
+        public static int maxSemesters = 4; // max regular semesters allowed. starts from 1
         public static final int TOTAL_CREDIT_REQUIREMENTS = 92;
         public static final int RECOMMENDED_CREDIT_LIMIT = 16;
         public static final int REGULAR_SEMESTER_CREDIT_LIMIT = 18;
@@ -228,6 +228,29 @@ public class Main {
 
         }
 
+        // public static HashMap<Integer, List<Node>> deepCopyHashMap(Map<Integer,
+        // List<Node>> originalMap) {
+        // try {
+        // ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        // ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
+
+        // // Serialize the original map to the byte stream
+        // objectOutputStream.writeObject(originalMap);
+        // objectOutputStream.close();
+
+        // // Deserialize the byte stream to create a new copy of the map
+        // ByteArrayInputStream inputStream = new
+        // ByteArrayInputStream(outputStream.toByteArray());
+        // ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+
+        // // Return the deep copy of the map
+        // return (HashMap<Integer, List<Node>>) objectInputStream.readObject();
+        // } catch (IOException | ClassNotFoundException e) {
+        // e.printStackTrace();
+        // return null;
+        // }
+        // }
+
         /**
          * Function to look for a solution. It tries all different summer/non summer
          * combinations, and for
@@ -247,45 +270,23 @@ public class Main {
          *                                   represents all combinations of fall, spring
          *                                   and summers that can be generated
          */
-        public static boolean findSchedule(Graph g, HashMap<Integer, List<Node>> map,
-                        List<List<Semester>> allCombinationsOfSemesters, int currentLevel, int totalCredits,
-                        int currentSemester) {
-
-                for (int i = 0; i < allCombinationsOfSemesters.size(); i++) {
-                        // looks for a solution for every combinations of summers/non summers
-                        boolean scheduleFound = scheduleCourses(g, map, allCombinationsOfSemesters.get(i),
-                                        currentLevel, totalCredits, 0);
-                        if (scheduleFound) {
-                                System.out.println("SCHEDULE FOUND");
+        private static boolean findSchedule(Graph g, HashMap<Integer, List<Node>> map,
+                        List<List<Semester>> allCombinationsOfSemesters, int currentLevel,
+                        int totalCredits, int currentSemester) {
+                for (List<Semester> semesterCombination : allCombinationsOfSemesters) {
+                        // First attempt with regular credit limits (16 and 18)
+                        if (scheduleCourses(g, map, new ArrayList<>(semesterCombination), currentLevel, totalCredits, 0,
+                                        false)) {
                                 return true;
-                        } else {
-                                System.out.println("NO SOLUTION FOUDN WITH CURRENT COMBINATION: "
-                                                + allCombinationsOfSemesters.get(i));
+                        }
+                        // Second attempt allowing 21 credits in the last semester
+                        if (scheduleCourses(g, map, new ArrayList<>(semesterCombination), currentLevel, totalCredits, 0,
+                                        true)) {
+                                return true;
                         }
                 }
                 System.out.println("NO SOLUTION FOUND");
                 return false;
-        }
-
-        public static HashMap<Integer, List<Node>> deepCopyHashMap(Map<Integer, List<Node>> originalMap) {
-                try {
-                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
-
-                        // Serialize the original map to the byte stream
-                        objectOutputStream.writeObject(originalMap);
-                        objectOutputStream.close();
-
-                        // Deserialize the byte stream to create a new copy of the map
-                        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
-                        ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-
-                        // Return the deep copy of the map
-                        return (HashMap<Integer, List<Node>>) objectInputStream.readObject();
-                } catch (IOException | ClassNotFoundException e) {
-                        e.printStackTrace();
-                        return null;
-                }
         }
 
         /**
@@ -301,6 +302,17 @@ public class Main {
                         }
                 }
                 return null;
+        }
+
+        private static int[] determineCreditLimits(Semester semester, boolean allowExtraCreditsInLastSemester) {
+                if (semester.isSummer()) {
+                        return new int[] { SUMMER_SEMESTER_CREDIT_LIMIT };
+                } else if (semester.isFinal() && allowExtraCreditsInLastSemester) {
+                        return new int[] { RECOMMENDED_CREDIT_LIMIT, REGULAR_SEMESTER_CREDIT_LIMIT,
+                                        FINAL_SEMESTER_CREDIT_LIMIT };
+                } else {
+                        return new int[] { RECOMMENDED_CREDIT_LIMIT, REGULAR_SEMESTER_CREDIT_LIMIT };
+                }
         }
 
         /******************************************************************************************************
@@ -329,7 +341,8 @@ public class Main {
          ******************************************************************************************************/
 
         private static boolean scheduleCourses(Graph g, HashMap<Integer, List<Node>> m,
-                        List<Semester> semesters, int currentLevel, int totalCredits, int currentSemester) {
+                        List<Semester> semesters, int currentLevel, int totalCredits,
+                        int currentSemester, boolean allowExtraCreditsInLastSemester) {
 
                 // if finished the creditRequirements, great
                 if (totalCredits == TOTAL_CREDIT_REQUIREMENTS) {
@@ -344,15 +357,8 @@ public class Main {
 
                         int currentMaxCrds;
                         int currentCredits;
-                        int[] creditsHeuristic = new int[] { RECOMMENDED_CREDIT_LIMIT, REGULAR_SEMESTER_CREDIT_LIMIT };
-                        if (semesters.get(currentSemester).isFinal()) { // assign max credits as 21 if this is the last
-                                                                        // semester
-                                creditsHeuristic = new int[] { RECOMMENDED_CREDIT_LIMIT, REGULAR_SEMESTER_CREDIT_LIMIT,
-                                                FINAL_SEMESTER_CREDIT_LIMIT };
-                        }
-                        if (semesters.get(currentSemester).isSummer()) {
-                                creditsHeuristic = new int[] { SUMMER_SEMESTER_CREDIT_LIMIT };
-                        }
+                        int[] creditsHeuristic = determineCreditLimits(semesters.get(currentSemester),
+                                        allowExtraCreditsInLastSemester);
 
                         for (int i : creditsHeuristic) {
                                 // try course assignment with 16 crdts first, the try other options
@@ -428,7 +434,7 @@ public class Main {
                                 // move to next semester
                                 if (scheduleCourses(graph, map, semesters, currentLevel + 1,
                                                 totalCredits + currentCredits,
-                                                currentSemester + 1) == true)
+                                                (currentSemester + 1), allowExtraCreditsInLastSemester))
                                         return true;
                                 // if didn't work, backtrack and change combination of heuristics for this
                                 // semester
@@ -437,9 +443,9 @@ public class Main {
                 }
 
                 // no more semester, and plan was incomplete
-                // System.out.println("******RETURNED FALSE AT " + currentSemester + "(" +
-                // totalCredits + ")");
-                // semesters.stream().forEach(System.out::println); // printing lien by line
+                System.out.println("******RETURNED FALSE AT " + currentSemester + "(" +
+                                totalCredits + ")");
+                semesters.stream().forEach(System.out::println); // printing lien by line
 
                 return false;
 
