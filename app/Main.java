@@ -1,16 +1,10 @@
 package app;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import entities.ComparatorTool;
 import entities.Course;
 import entities.Edge;
@@ -19,12 +13,12 @@ import entities.Node;
 import entities.Semester;
 
 /**
- * Newest version of the code. Semester is now an Object.
- * Summer heuristic implemented.
+ * Newest version of the code. Semester is now an Object. Summer heuristic
+ * implemented.
  */
 public class Main {
 
-        public static int maxSemesters = 4; // max regular semesters allowed. starts from 1
+        public static int maxSemesters = 5; // max regular semesters allowed. starts from 1
         public static final int TOTAL_CREDIT_REQUIREMENTS = 92;
         public static final int RECOMMENDED_CREDIT_LIMIT = 16;
         public static final int REGULAR_SEMESTER_CREDIT_LIMIT = 18;
@@ -228,29 +222,6 @@ public class Main {
 
         }
 
-        // public static HashMap<Integer, List<Node>> deepCopyHashMap(Map<Integer,
-        // List<Node>> originalMap) {
-        // try {
-        // ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        // ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
-
-        // // Serialize the original map to the byte stream
-        // objectOutputStream.writeObject(originalMap);
-        // objectOutputStream.close();
-
-        // // Deserialize the byte stream to create a new copy of the map
-        // ByteArrayInputStream inputStream = new
-        // ByteArrayInputStream(outputStream.toByteArray());
-        // ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-
-        // // Return the deep copy of the map
-        // return (HashMap<Integer, List<Node>>) objectInputStream.readObject();
-        // } catch (IOException | ClassNotFoundException e) {
-        // e.printStackTrace();
-        // return null;
-        // }
-        // }
-
         /**
          * Function to look for a solution. It tries all different summer/non summer
          * combinations, and for
@@ -271,20 +242,25 @@ public class Main {
          *                                   and summers that can be generated
          */
         private static boolean findSchedule(Graph g, HashMap<Integer, List<Node>> map,
-                        List<List<Semester>> allCombinationsOfSemesters, int currentLevel,
-                        int totalCredits, int currentSemester) {
+                        List<List<Semester>> allCombinationsOfSemesters, int currentLevel, int totalCredits,
+                        int currentSemester) {
                 for (List<Semester> semesterCombination : allCombinationsOfSemesters) {
                         // First attempt with regular credit limits (16 and 18)
-                        if (scheduleCourses(g, map, new ArrayList<>(semesterCombination), currentLevel, totalCredits, 0,
-                                        false)) {
+                        if (scheduleCourses(g, map, new ArrayList<>(semesterCombination), currentLevel, totalCredits,
+                                        0, false)) {
+
                                 return true;
                         }
+
                         // Second attempt allowing 21 credits in the last semester
-                        if (scheduleCourses(g, map, new ArrayList<>(semesterCombination), currentLevel, totalCredits, 0,
-                                        true)) {
+                        if (scheduleCourses(g, map, new ArrayList<>(semesterCombination), currentLevel, totalCredits,
+                                        0, true)) {
+
                                 return true;
                         }
+
                 }
+
                 System.out.println("NO SOLUTION FOUND");
                 return false;
         }
@@ -304,12 +280,21 @@ public class Main {
                 return null;
         }
 
-        private static int[] determineCreditLimits(Semester semester, boolean allowExtraCreditsInLastSemester) {
+        /**
+         * Function to determine the different credits allowed in a semester based on
+         * different factors
+         * like type of semester (summer or not), last semester (final or not) ...etc.
+         * return an int[]
+         * with the different allowed values.
+         */
+        private static int[] determineCreditLimits(Semester semester,
+                        boolean allowExtraCreditsInLastSemester) {
                 if (semester.isSummer()) {
                         return new int[] { SUMMER_SEMESTER_CREDIT_LIMIT };
                 } else if (semester.isFinal() && allowExtraCreditsInLastSemester) {
-                        return new int[] { RECOMMENDED_CREDIT_LIMIT, REGULAR_SEMESTER_CREDIT_LIMIT,
-                                        FINAL_SEMESTER_CREDIT_LIMIT };
+                        return new int[] { FINAL_SEMESTER_CREDIT_LIMIT };
+                } else if (!semester.isFinal() && allowExtraCreditsInLastSemester) {
+                        return new int[] { REGULAR_SEMESTER_CREDIT_LIMIT };
                 } else {
                         return new int[] { RECOMMENDED_CREDIT_LIMIT, REGULAR_SEMESTER_CREDIT_LIMIT };
                 }
@@ -341,8 +326,8 @@ public class Main {
          ******************************************************************************************************/
 
         private static boolean scheduleCourses(Graph g, HashMap<Integer, List<Node>> m,
-                        List<Semester> semesters, int currentLevel, int totalCredits,
-                        int currentSemester, boolean allowExtraCreditsInLastSemester) {
+                        List<Semester> semesters, int currentLevel, int totalCredits, int currentSemester,
+                        boolean allowExtraCreditsInLastSemester) {
 
                 // if finished the creditRequirements, great
                 if (totalCredits == TOTAL_CREDIT_REQUIREMENTS) {
@@ -357,95 +342,146 @@ public class Main {
 
                         int currentMaxCrds;
                         int currentCredits;
+                        int currentMajorRelatedCredits;
                         int[] creditsHeuristic = determineCreditLimits(semesters.get(currentSemester),
                                         allowExtraCreditsInLastSemester);
 
-                        for (int i : creditsHeuristic) {
-                                // try course assignment with 16 crdts first, the try other options
-                                currentCredits = 0;
-                                currentMaxCrds = i;
-                                Graph graph = g.deepCopy();
+                        // implementation of the load balancing, to allow for a balanced semester
+                        // between major and
+                        // non major courses
 
-                                // sort by reachability
-                                HashMap<Integer, List<Node>> map = graph.computeLevelMap();
-                                ComparatorTool comparator = new ComparatorTool();
-                                comparator.setStrategy("reachability");
-                                Collections.sort(map.get(currentLevel), comparator);
+                        boolean[] majorBalancingHeuristic = { true, false };
+                        for (boolean allowBalancing : majorBalancingHeuristic) {
+                                // System.out.println(
+                                // "***** (SEMESTER" + (currentSemester + 1) + ") SET BALACING TO= " +
+                                // allowBalancing);
+                                for (int i : creditsHeuristic) {
+                                        // System.out.println("***** CURRENT (SEMESTER" + (currentSemester + 1) + " )
+                                        // BALANCING: "
+                                        // + allowBalancing + " at this point.******Iteration:" + i);
+                                        // try course assignment with different max credit values based on conditions.
+                                        currentCredits = 0;
+                                        currentMajorRelatedCredits = 0;
+                                        currentMaxCrds = i;
+                                        Graph graph = g.deepCopy();
 
-                                List<Node> coursesToConsider = map.get(currentLevel); // putting them here so that we
-                                                                                      // can
-                                                                                      // modify this array during
-                                                                                      // processing
+                                        // sort by reachability
+                                        HashMap<Integer, List<Node>> map = graph.computeLevelMap();
 
-                                // starts filling semester level by level
-                                List<Node> coursesAtCurrentSemester = new ArrayList<>();
-                                for (int j = 0; j < coursesToConsider.size(); j++) {
-                                        Node n = coursesToConsider.get(j);
-                                        // System.out.println(currentLevel + ":" + n);
-                                        if (currentCredits + n.getCourse().getCrds() <= currentMaxCrds) {
-                                                // LAB MANDATORY HEURISTIC
-                                                boolean hasLab = n.getCourse().getLab() != null;
-                                                boolean isLab = n.getCourse().isLab();
+                                        List<Node> coursesToConsider = map.get(currentLevel);
+                                        ComparatorTool comparator = new ComparatorTool();
+                                        comparator.setStrategy("major");
+                                        Collections.sort(coursesToConsider, comparator);
+                                        comparator.setStrategy("reachability");
+                                        Collections.sort(coursesToConsider, comparator);
 
-                                                if (isLab || hasLab)
-                                                // ensure both lab and course are taken together, or none is taken
-                                                {
-                                                        Node labNode = findLabNode(n, coursesToConsider);
-                                                        if (currentCredits + n.getCourse().getCrds()
-                                                                        + labNode.getCourse()
-                                                                                        .getCrds() <= currentMaxCrds) {
-                                                                coursesAtCurrentSemester.add(n);
-                                                                coursesAtCurrentSemester.add(labNode);
-                                                                semesters.get(currentSemester).setNodesAtSemester(
-                                                                                coursesAtCurrentSemester);
-                                                                currentCredits += n.getCourse().getCrds()
-                                                                                + labNode.getCourse().getCrds();
+                                        // starts filling semester level by level
+                                        List<Node> coursesAtCurrentSemester = new ArrayList<>();
+                                        for (int j = 0; j < coursesToConsider.size(); j++) {
+                                                Node n = coursesToConsider.get(j);
+                                                boolean isMajor = n.getCourse().isMajor();
 
+                                                // System.out.println(currentLevel+" !!!!!"+n+" : (major) "+isMajor);
+                                                if (currentCredits + n.getCourse().getCrds() <= currentMaxCrds) {
+                                                        // allow balancing is true, means we only add a course if, it's
+                                                        // either not a major
+                                                        // course, or it's major but major limit wasn't reached yet
+                                                        // allow balancing is false, means we add anyway so if statement
+                                                        // must pass everytime
+                                                        // there's probably a better way of writing this
+                                                        if (!allowBalancing || (!isMajor
+                                                                        || allowBalancing && currentMajorRelatedCredits
+                                                                                        + n.getCourse().getCrds() <= MAJOR_CREDITS_SEMESTER_LIMIT)) {
+                                                                // System.out.println(currentLevel+" !!!!!"+n+" to
+                                                                // consider : (major) "+isMajor);
+                                                                // LAB MANDATORY HEURISTIC
+                                                                boolean hasLab = n.getCourse().getLab() != null;
+                                                                boolean isLab = n.getCourse().isLab();
+
+                                                                if (isLab || hasLab)
+                                                                // ensure both lab and course are taken together, or
+                                                                // none is taken
+                                                                {
+                                                                        Node labNode = findLabNode(n,
+                                                                                        coursesToConsider);
+                                                                        if (currentCredits + n.getCourse().getCrds()
+                                                                                        + labNode.getCourse()
+                                                                                                        .getCrds() <= currentMaxCrds) {
+                                                                                coursesAtCurrentSemester.add(n);
+                                                                                coursesAtCurrentSemester.add(labNode);
+
+                                                                                semesters.get(currentSemester)
+                                                                                                .setNodesAtSemester(
+                                                                                                                coursesAtCurrentSemester);
+                                                                                currentCredits += n.getCourse()
+                                                                                                .getCrds()
+                                                                                                + labNode.getCourse()
+                                                                                                                .getCrds();
+                                                                                currentMajorRelatedCredits += n
+                                                                                                .getCourse().getCrds()
+                                                                                                + labNode.getCourse()
+                                                                                                                .getCrds();
+
+                                                                        }
+                                                                        // Prevent lab/course from being processed again
+                                                                        coursesToConsider.remove(labNode);
+
+                                                                } else // no lab issue
+                                                                {
+                                                                        coursesAtCurrentSemester.add(n);
+
+                                                                        semesters.get(currentSemester)
+                                                                                        .setNodesAtSemester(
+                                                                                                        coursesAtCurrentSemester);
+                                                                        currentCredits += n.getCourse().getCrds();
+                                                                        if (isMajor)
+                                                                                currentMajorRelatedCredits += n
+                                                                                                .getCourse().getCrds();
+                                                                        // System.out.println(currentLevel+" !!!!!"+n+"
+                                                                        // TAKEN : (major) "+isMajor +" CRDS
+                                                                        // "+
+                                                                        // currentMajorRelatedCredits);
+                                                                }
                                                         }
-                                                        // Prevent lab/course from being processed again
-                                                        coursesToConsider.remove(labNode);
+                                                }
 
-                                                } else // no lab issue
-                                                {
-                                                        coursesAtCurrentSemester.add(n);
-                                                        semesters.get(currentSemester)
-                                                                        .setNodesAtSemester(coursesAtCurrentSemester);
-                                                        currentCredits += n.getCourse().getCrds();
+                                        }
+
+                                        // Handling courses that were not picked for this current semester.
+                                        for (Node course : map.get(currentLevel)) {
+                                                if (!semesters.get(currentLevel).getNodesAtSemester()
+                                                                .contains(course)) {
+                                                        course.setLevel(course.getLevel() + 1); // push one level down
+
+                                                }
+                                        }
+                                        for (Node course : map.get(currentLevel)) {
+
+                                                if (!semesters.get(currentSemester).getNodesAtSemester()
+                                                                .contains(course)) {
+                                                        graph.levelizefromRoot(course); // push all levels below
+                                                        map = graph.computeLevelMap();
                                                 }
                                         }
 
+                                        // move to next semester
+                                        if (scheduleCourses(graph, map, semesters, currentLevel + 1,
+                                                        totalCredits + currentCredits, (currentSemester + 1),
+                                                        allowExtraCreditsInLastSemester))
+                                                return true;
+                                        // if didn't work, backtrack and change the max credit load
+                                        semesters.get(currentSemester).getNodesAtSemester().clear();
                                 }
-
-                                // Handling courses that were not picked for this current semester.
-                                for (Node course : map.get(currentLevel)) {
-                                        if (!semesters.get(currentLevel).getNodesAtSemester().contains(course)) {
-                                                course.setLevel(course.getLevel() + 1); // push one level down
-
-                                        }
-                                }
-                                for (Node course : map.get(currentLevel)) {
-
-                                        if (!semesters.get(currentSemester).getNodesAtSemester().contains(course)) {
-                                                graph.levelizefromRoot(course); // push all levels below
-                                                map = graph.computeLevelMap();
-                                        }
-                                }
-
-                                // move to next semester
-                                if (scheduleCourses(graph, map, semesters, currentLevel + 1,
-                                                totalCredits + currentCredits,
-                                                (currentSemester + 1), allowExtraCreditsInLastSemester))
-                                        return true;
-                                // if didn't work, backtrack and change combination of heuristics for this
-                                // semester
-                                semesters.get(currentSemester).getNodesAtSemester().clear();
+                                // if didn't work, backtrack and do not balance the semester anymore
+                                // System.out.println("change balancing value ");
                         }
+
                 }
 
                 // no more semester, and plan was incomplete
-                System.out.println("******RETURNED FALSE AT " + currentSemester + "(" +
-                                totalCredits + ")");
-                semesters.stream().forEach(System.out::println); // printing lien by line
+                // System.out.println("******RETURNED FALSE AT " + currentSemester + "(" +
+                // totalCredits + ")");
+                // semesters.stream().forEach(System.out::println); // printing lien by line
 
                 return false;
 
