@@ -14,6 +14,8 @@ import java.util.Queue;
 import java.util.Set;
 
 public class Graph implements Serializable {
+
+  private static final long serialVersionUID = 1L;
   private List<Node> nodes;
 
   public Graph() {

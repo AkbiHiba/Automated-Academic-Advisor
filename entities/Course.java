@@ -17,14 +17,15 @@ public class Course implements Serializable {
   private boolean required;
   private boolean major;
   private boolean isLab; // whether the course is a lab or not
-  private Course lab; // If course is a lab, this is the course of the lab. If this is a course, this
-                      // is the lab of that course.
+  private Course lab; // If course is a lab, this is the course of the lab. If this is a course,
+                      // this is the lab of that course.
   private int crds;
   private List<Course> prereq;
   private List<Course> coreq;
 
   // constructor
-  public Course(String name, boolean required, boolean major, boolean isLab, int crds, List<Course> prereq) {
+  public Course(String name, boolean required, boolean major, boolean isLab, int crds,
+      List<Course> prereq) {
     super();
     this.name = name;
     this.required = required;
@@ -35,8 +36,8 @@ public class Course implements Serializable {
     this.coreq = new ArrayList<Course>();
   }
 
-  public Course(String name, boolean required, boolean major, boolean isLab, int crds, List<Course> prereq,
-      List<Course> coreq) {
+  public Course(String name, boolean required, boolean major, boolean isLab, int crds,
+      List<Course> prereq, List<Course> coreq) {
     super();
     this.name = name;
     this.required = required;
@@ -133,6 +134,18 @@ public class Course implements Serializable {
 
   public String toString() {
     return name;
+  }
+
+  // two courses are equal if they have the same name
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null || getClass() != obj.getClass())
+      return false;
+
+    Course c = (Course) obj;
+    return c.getName().equalsIgnoreCase(this.name);
   }
 
 }
