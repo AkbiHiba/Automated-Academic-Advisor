@@ -205,8 +205,8 @@ public class Main {
                  * INITIALIZATION OF GRAPH FINISHED
                  ******************************************************************************************************/
 
-                // compute reachability of the nodes
-                g.computeReachability();
+                // // compute reachability of the nodes
+                // g.computeReachability();
 
                 // perform first levelization
                 g.levelizeGraph();
@@ -291,10 +291,12 @@ public class Main {
                         boolean allowExtraCreditsInLastSemester) {
                 if (semester.isSummer()) {
                         return new int[] { SUMMER_SEMESTER_CREDIT_LIMIT };
-                } else if (semester.isFinal() && allowExtraCreditsInLastSemester) {
-                        return new int[] { FINAL_SEMESTER_CREDIT_LIMIT };
-                } else if (!semester.isFinal() && allowExtraCreditsInLastSemester) {
-                        return new int[] { REGULAR_SEMESTER_CREDIT_LIMIT };
+                } else if (semester.isFinal() && allowExtraCreditsInLastSemester) { // this for the last semester when
+                                                                                    // we are
+                        return new int[] { FINAL_SEMESTER_CREDIT_LIMIT }; // allowing 21 credits.
+                } else if (!semester.isFinal() && allowExtraCreditsInLastSemester) { // this is when we are directly
+                                                                                     // passing 18
+                        return new int[] { REGULAR_SEMESTER_CREDIT_LIMIT }; // for all semesters.
                 } else {
                         return new int[] { RECOMMENDED_CREDIT_LIMIT, REGULAR_SEMESTER_CREDIT_LIMIT };
                 }
