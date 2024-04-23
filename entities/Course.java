@@ -19,13 +19,14 @@ public class Course implements Serializable {
   private boolean isLab; // whether the course is a lab or not
   private Course lab; // If course is a lab, this is the course of the lab. If this is a course,
                       // this is the lab of that course.
+  private boolean isCompleted; // if couse is already taken or not.
   private int crds;
   private List<Course> prereq;
   private List<Course> coreq;
 
   // constructor
   public Course(String name, boolean required, boolean major, boolean isLab, int crds,
-      List<Course> prereq) {
+      List<Course> prereq, boolean isCompleted) {
     super();
     this.name = name;
     this.required = required;
@@ -33,11 +34,13 @@ public class Course implements Serializable {
     this.isLab = isLab;
     this.crds = crds;
     this.prereq = prereq;
+    this.isCompleted = isCompleted;
+
     this.coreq = new ArrayList<Course>();
   }
 
   public Course(String name, boolean required, boolean major, boolean isLab, int crds,
-      List<Course> prereq, List<Course> coreq) {
+      List<Course> prereq, List<Course> coreq, boolean isCompleted) {
     super();
     this.name = name;
     this.required = required;
@@ -46,6 +49,7 @@ public class Course implements Serializable {
     this.crds = crds;
     this.prereq = prereq;
     this.coreq = coreq;
+    this.isCompleted = isCompleted;
   }
 
   public String getName() {
@@ -134,6 +138,14 @@ public class Course implements Serializable {
 
   public String toString() {
     return name;
+  }
+
+  public boolean getisCompleted() {
+    return this.isCompleted;
+  }
+
+  public void setisCompleted(boolean isCompleted) {
+    this.isCompleted = isCompleted;
   }
 
   // two courses are equal if they have the same name

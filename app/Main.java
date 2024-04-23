@@ -1,6 +1,7 @@
 package app;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -24,31 +25,30 @@ public class Main {
         public static final int FINAL_SEMESTER_CREDIT_LIMIT = 21;
         public static final int MAJOR_CREDITS_SEMESTER_LIMIT = 13;
         public static List<Course> unavailableSummerCourses = new ArrayList<Course>();
+        // assume all of these are taken from the user
+        public static List<String> completedCourses = Arrays.asList("CP1", "Discrete 1", "Basic Biology",
+                        "Humanities 1",
+                        "Calculus 3", "CO", "CO LAB", "CP2", "Ethics", "English", "Humanities 2");
+        public static int completedSemesters = 5;
+        public static int completedCredits = 31;
+        public static int startSemester = 0;
+        // all above
         public static Graph g;
+
+        public static final int REMAINING_TOTAL_CREDIT_REQUIREMENTS = TOTAL_CREDIT_REQUIREMENTS - completedCredits;
 
         public static void main(String[] args) {
                 // initialize graph
-                Init i = new Init();
+                Init i = new Init(completedCourses);
                 g = i.getG();
                 unavailableSummerCourses = i.getUnavailableSummerCourses();
                 // System.out.println(unavailableSummerCourses);
                 // compute reachability of the nodes
                 g.computeReachability();
 
-                // generate all combiantions of semesters, with and without summers
-                List<List<Semester>> allCombinationsOfSemesters = Semester
-                                .generateSemestersCombinations(maxSemesters, 0);
-                // allCombinationsOfSemesters.stream().forEach(System.out::println);
-
-                int currentLevel = 0;
-                int totalCredits = 0; // total amount of credits within the graduation plan
-
                 /******************************************************************************************************
                  * INITIALIZATION OF GRAPH FINISHED
                  ******************************************************************************************************/
-
-                // compute reachability of the nodes
-                g.computeReachability();
 
                 // perform first levelization
                 g.levelizeGraph();
@@ -60,8 +60,55 @@ public class Main {
                 /******************************************************************************************************
                  * REACHABILITY AND LEVELIZATION OF GRAPH FINISHED- PROCEED TO FIND A SOLUTION
                  ******************************************************************************************************/
-                findSchedule(g, map, allCombinationsOfSemesters, currentLevel, totalCredits, 0);
+                int found = 0;
+                // this loop to add max 2 semesters if no solutions using all what we had
+                for (int extraSem = 0; extraSem <= 2; extraSem++) {
+                        int newmaxSemesters = maxSemesters + extraSem; // this will start with 0 extraSem , the regular
+                                                                       // case them will keep adding
+                        int remainingSemesters = newmaxSemesters - completedSemesters;
+                        int newStartSemester = (startSemester + completedSemesters) % 2; /*
+                                                                                          * This assumes that the
+                                                                                          * completedSemesters given by
+                                                                                          * the
+                                                                                          * user does not include
+                                                                                          * summers( it
+                                                                                          * should not really matter to
+                                                                                          * us).
+                                                                                          * modulo 2 because here we
+                                                                                          * want to
+                                                                                          * know if the next
+                                                                                          * semester to start
+                                                                                          * recommending
+                                                                                          * courses for student based on
+                                                                                          * what
+                                                                                          * he completed
+                                                                                          * is a full or a summer
+                                                                                          */
+                        /*
+                         * generate all combiantions of semesters, with and without summers
+                         * I passes the remainig semesters instead the max number of semesters cz the
+                         * student alreasy took semesters
+                         * passed the newStart semester which means if the new next sem is a full or a
+                         * spring
+                         */
+                        List<List<Semester>> allCombinationsOfSemesters = Semester
+                                        .generateSemestersCombinations(remainingSemesters,
+                                                        newStartSemester);
+                        allCombinationsOfSemesters.stream().forEach(System.out::println);
 
+                        int currentLevel = 0;
+                        int totalCredits = 0;
+
+                        if (findSchedule(g, map, allCombinationsOfSemesters, currentLevel, totalCredits,
+                                        0)) {
+                                found = 1;
+                                break;
+                        }
+
+                }
+                if (found != 1) {
+                        System.out.println("No solution possible");
+                }
         }
 
         /**
@@ -89,21 +136,23 @@ public class Main {
                 for (List<Semester> semesterCombination : allCombinationsOfSemesters) {
                         // First attempt with regular credit limits (16 and 18)
                         if (scheduleCourses(g, map, new ArrayList<>(semesterCombination), currentLevel, totalCredits,
-                                        0, false)) {
+                                        currentSemester, false)) {
 
                                 return true;
                         }
 
                         // Second attempt allowing 21 credits in the last semester
-                        if (scheduleCourses(g, map, new ArrayList<>(semesterCombination), currentLevel, totalCredits,
-                                        0, true)) {
+                        if (scheduleCourses(g, map, new ArrayList<>(semesterCombination),
+                                        currentLevel, totalCredits,
+                                        currentSemester, true)) {
 
                                 return true;
                         }
 
                 }
+                System.out.println(
+                                "NO SOLUTION FOUND WITH THE SET NUMBER OF SEMESTERS, TRYING ADDING 1 MORE SEMESTERS");
 
-                System.out.println("NO SOLUTION FOUND");
                 return false;
         }
 
@@ -133,10 +182,12 @@ public class Main {
                         boolean allowExtraCreditsInLastSemester) {
                 if (semester.isSummer()) {
                         return new int[] { SUMMER_SEMESTER_CREDIT_LIMIT };
-                } else if (semester.isFinal() && allowExtraCreditsInLastSemester) {
-                        return new int[] { FINAL_SEMESTER_CREDIT_LIMIT };
-                } else if (!semester.isFinal() && allowExtraCreditsInLastSemester) {
-                        return new int[] { REGULAR_SEMESTER_CREDIT_LIMIT };
+                } else if (semester.isFinal() && allowExtraCreditsInLastSemester) { // this for the last semester when
+                                                                                    // we are
+                        return new int[] { FINAL_SEMESTER_CREDIT_LIMIT }; // allowing 21 credits.
+                } else if (!semester.isFinal() && allowExtraCreditsInLastSemester) { // this is when we are directly
+                                                                                     // passing 18
+                        return new int[] { REGULAR_SEMESTER_CREDIT_LIMIT }; // for all semesters.
                 } else {
                         return new int[] { RECOMMENDED_CREDIT_LIMIT, REGULAR_SEMESTER_CREDIT_LIMIT };
                 }
@@ -172,7 +223,7 @@ public class Main {
                         boolean allowExtraCreditsInLastSemester) {
 
                 // if finished the creditRequirements, great
-                if (totalCredits == TOTAL_CREDIT_REQUIREMENTS) {
+                if (totalCredits == REMAINING_TOTAL_CREDIT_REQUIREMENTS) {
                         // print resulting projection plan
                         System.out.println("*************************SOLUTION FOUND*****************************");
                         semesters.stream().forEach(System.out::println);// fancy printing
@@ -210,7 +261,6 @@ public class Main {
 
                                         // sort by reachability
                                         HashMap<Integer, List<Node>> map = graph.computeLevelMap();
-
                                         List<Node> coursesToConsider = map.get(currentLevel);
                                         ComparatorTool comparator = new ComparatorTool();
                                         comparator.setStrategy("major");
@@ -299,7 +349,7 @@ public class Main {
 
                                         // Handling courses that were not picked for this current semester.
                                         for (Node course : map.get(currentLevel)) {
-                                                if (!semesters.get(currentLevel).getNodesAtSemester()
+                                                if (!semesters.get(currentSemester).getNodesAtSemester()
                                                                 .contains(course)) {
                                                         course.setLevel(course.getLevel() + 1); // push one level down
 
@@ -329,9 +379,9 @@ public class Main {
                 }
 
                 // no more semester, and plan was incomplete
-                // System.out.println("******RETURNED FALSE AT " + currentSemester + "(" +
-                // totalCredits + ")");
-                // semesters.stream().forEach(System.out::println); // printing lien by line
+                System.out.println("******RETURNED FALSE AT " + currentSemester + "(" +
+                                totalCredits + ")");
+                semesters.stream().forEach(System.out::println); // printing lien by line
 
                 return false;
 
