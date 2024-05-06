@@ -13,6 +13,10 @@ import java.util.List;
  * 
  */
 public class Course implements Serializable {
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 4890392138708219513L;
   private String name;
   private boolean required;
   private boolean major;
