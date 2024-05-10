@@ -58,6 +58,14 @@ public class User implements Serializable {
     return totalCreditsCompleted;
   }
 
+  public int getNbSemestersCompleted() {
+    return nbSemestersCompleted;
+  }
+
+  public void setNbSemestersCompleted(int nbSemestersCompleted) {
+    this.nbSemestersCompleted = nbSemestersCompleted;
+  }
+
   public String getStanding() {
     return standing;
   }

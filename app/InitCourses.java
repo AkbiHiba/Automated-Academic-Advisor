@@ -18,129 +18,151 @@ import entities.Course;
  * it
  */
 public class InitCourses {
-  private static final String COURSES_FILE = "courses.co";
+        private static final String COURSES_FILE = "courses.co";
 
-  public static List<Course> loadCourses() {
-    List<Course> courses = new ArrayList<>();
-    File file = new File(COURSES_FILE);
+        @SuppressWarnings("unchecked")
+        public static List<Course> loadCourses() {
+                List<Course> courses = new ArrayList<>();
+                File file = new File(COURSES_FILE);
 
-    if (file.exists()) {
-      try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(COURSES_FILE))) {
-        courses = (List<Course>) ois.readObject();
-      } catch (ClassNotFoundException e) {
+                if (file.exists()) {
+                        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+                                courses = (List<Course>) ois.readObject();
+                        } catch (ClassNotFoundException | IOException e) {
+                                System.err.println("Error reading courses from file: " + e.getMessage());
+                                return new ArrayList<>(); // Return empty list if error
+                        }
+                } else {
+                        courses = initCourses(); // Initialize if no file exists
+                        saveCourses(courses); // Save the newly initialized list
+                }
+                return courses;
+        }
 
-        e.printStackTrace();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    } else {
-      try {
-        saveCourses(initCourses());
-        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(COURSES_FILE));
-        courses = (List<Course>) ois.readObject();
-      } catch (ClassNotFoundException e) {
+        public static void saveCourses(List<Course> courses) {
+                try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(COURSES_FILE))) {
+                        oos.writeObject(courses);
+                } catch (IOException e) {
+                        System.err.println("Error saving courses to file: " + e.getMessage());
+                }
+        }
 
-        e.printStackTrace();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-    return courses;
-  }
+        public static List<Course> initCourses() {
+                List<Course> courses = new ArrayList<>();
+                Course csc243 = new Course("CSC243", "Introduction to Object-Oriented Programming", true, true, false,
+                                3,
+                                new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
+                Course mth201 = new Course("MTH201", "Calculus III", true, true, false, 3, new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
+                Course com203 = new Course("COM203", "Fundamentals of Oral Communications", true, false, false, 3,
+                                new ArrayList<Course>(), new ArrayList<Course>(), false);
+                Course eng202 = new Course("ENG202", "Advanced Academic English", true, false, false, 3,
+                                new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
+                Course las204 = new Course("LAS204", "Technology, Ethics, and the Global Society", true, false, false,
+                                3,
+                                new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
+                Course bio209 = new Course("BIO209", "Basic Biology for Computer Science", true, false, false, 3,
+                                new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
+                Course csc245 = new Course("CSC245", "Objects & Data Abstraction", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc243)), new ArrayList<Course>(), false);
+                Course mth207 = new Course("MTH207", "Discrete Structures I", true, true, false, 3,
+                                new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
+                Course csc320 = new Course("CSC320", "Computer Organization", true, true, false, 3,
+                                new ArrayList<Course>(),
+                                new ArrayList<Course>(Arrays.asList(csc245, mth207)), false);
+                Course csc320L = new Course("CSC322", "Computer Organization Lab", true, true, true, 1,
+                                new ArrayList<Course>(),
+                                new ArrayList<Course>(Arrays.asList(csc320)), false);
+                csc320.setLab(csc320L);
+                Course csc310 = new Course("CSC310", "Algorithms & Data Structures", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc245, mth207)), new ArrayList<Course>(), false);
+                Course csc375 = new Course("CSC375", "Database Management Systems", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc245, mth207)), new ArrayList<Course>(), false);
+                Course csc326 = new Course("CSC326", "Operating Systems", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc245, csc320)), new ArrayList<Course>(), false);
+                Course csc447 = new Course("CSC447", "Parallel Programming for Multicore & Cluster Systems", true, true,
+                                false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc326, csc310)), new ArrayList<Course>(), false);
+                Course csc490 = new Course("CSC490", "Software Engineering", true, true, false, 3,
+                                new ArrayList<Course>(), new ArrayList<Course>(Arrays.asList(csc375)), false);
+                Course mth307 = new Course("MTH307", "Discrete Structures II", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(mth207, mth201)), new ArrayList<Course>(), false);
+                Course csc430 = new Course("CSC430", "Computer Networks", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc326)), new ArrayList<Course>(), false);
+                Course csc599 = new Course("CSC599", "Capstone Project", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc490)),
+                                new ArrayList<Course>(Arrays.asList(eng202, com203)), false);
+                Course mth305 = new Course("MTH305", "Probability & Statistics", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(mth201)), new ArrayList<Course>(), false);
+                Course csc491 = new Course("CSC491", "Professional Experience", true, true, false, 1,
+                                new ArrayList<Course>(), new ArrayList<Course>(Arrays.asList(csc375)), false);
+                Course csc1 = new Course("CSC", "CSC elective 1", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc310)), new ArrayList<Course>(), false);
+                Course csc2 = new Course("CSC", "CSC elective 2", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc310)), new ArrayList<Course>(), false);
+                Course csc3 = new Course("CSC", "CSC elective 3", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc310)), new ArrayList<Course>(), false);
+                Course csc4 = new Course("CSC", "CSC elective 4", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc310)), new ArrayList<Course>(), false);
+                Course csc5 = new Course("CSC", "CSC elective 5", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(csc310)), new ArrayList<Course>(), false);
+                Course mth1 = new Course("MTH", "Math Elective", true, true, false, 3,
+                                new ArrayList<Course>(Arrays.asList(mth201)), new ArrayList<Course>(), false);
+                Course hum1 = new Course("", "LAC Elective 1", true, false, false, 3, new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
+                Course hum2 = new Course("", "LAC Elective 2", true, false, false, 3, new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
+                Course hum3 = new Course("", "LAC Elective 3", true, false, false, 3, new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
+                Course hum4 = new Course("", "LAC Elective 4", true, false, false, 3, new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
+                Course hum5 = new Course("", "LAC Elective 5", true, false, false, 3, new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
+                Course felec = new Course("", "Free Elective", true, false, false, 3, new ArrayList<Course>(),
+                                new ArrayList<Course>(), false);
 
-  public static void saveCourses(List<Course> courses) throws IOException {
-    try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(COURSES_FILE))) {
-      oos.writeObject(courses);
-    }
-  }
+                courses.add(csc243);
+                courses.add(mth201);
+                courses.add(com203);
+                courses.add(eng202);
+                courses.add(las204);
+                courses.add(bio209);
+                courses.add(csc245);
+                courses.add(mth207);
+                courses.add(csc320);
+                courses.add(csc320L);
+                courses.add(csc310);
+                courses.add(csc375);
+                courses.add(csc326);
+                courses.add(csc447);
+                courses.add(csc490);
+                courses.add(mth307);
+                courses.add(csc430);
+                courses.add(csc599);
+                courses.add(mth305);
+                courses.add(csc491);
+                courses.add(csc1);
+                courses.add(csc2);
+                courses.add(csc3);
+                courses.add(csc4);
+                courses.add(csc5);
+                courses.add(mth1);
+                courses.add(hum1);
+                courses.add(hum2);
+                courses.add(hum3);
+                courses.add(hum4);
+                courses.add(hum5);
+                courses.add(felec);
+                return courses;
+        }
 
-  public static List<Course> initCourses() {
-    List<Course> courses = new ArrayList<>();
-    Course csc243 = new Course("CP1", true, true, false, 3, new ArrayList<Course>());
-    // Course csc243L = new Course("CP1 LAB", true, true, true, 1, new
-    // ArrayList<Course>(),
-    // new ArrayList<Course>(Arrays.asList(csc243)));
-    // csc243.setLab(csc243L);
-    // csc243L.setLab(csc243);
-    Course mth201 = new Course("Calculus 3", true, true, false, 3, new ArrayList<Course>());
-    Course com203 = new Course("Public Communication", true, false, false, 3,
-        new ArrayList<Course>());
-    Course eng202 = new Course("English", true, false, false, 3, new ArrayList<Course>());
-    Course las204 = new Course("Ethics", true, false, false, 3, new ArrayList<Course>());
-    Course bio209 = new Course("Basic Biology", true, false, false, 3, new ArrayList<Course>());
-    Course csc245 = new Course("CP2", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc243)));
-    // Course csc245L = new Course("CP2 LAB", true, true, true, 1, new
-    // ArrayList<Course>(),
-    // new ArrayList<Course>(Arrays.asList(csc245)));
-    // csc245.setLab(csc245L);
-    // csc245L.setLab(csc245);
-    Course mth207 = new Course("Discrete 1", true, true, false, 3, new ArrayList<Course>());
-    Course csc230 = new Course("CO", true, true, false, 3, new ArrayList<Course>(),
-        new ArrayList<Course>(Arrays.asList(csc245, mth207)));
-    Course csc230L = new Course("CO LAB", true, true, true, 1, new ArrayList<Course>(),
-        new ArrayList<Course>(Arrays.asList(csc230)));
-    csc230.setLab(csc230L);
-    csc230L.setLab(csc230);
-    Course csc310 = new Course("CP3", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc245, mth207)));
-    // Course csc310L = new Course("CP3 LAB", true, true, true, 1, new
-    // ArrayList<Course>(),
-    // new ArrayList<Course>(Arrays.asList(csc310)));
-    // csc310.setLab(csc310L);
-    // csc310L.setLab(csc310);
-    Course csc375 = new Course("Database Management", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc245, mth207)));
-    Course csc326 = new Course("Operating Systems", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc245, csc230)));
-    Course parallel = new Course("Parallel", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc326, csc310)));
-    Course csc340 = new Course("Software Engineering", true, true, false, 3,
-        new ArrayList<Course>(), new ArrayList<Course>(Arrays.asList(csc375)));
-    Course csc380 = new Course("Discrete 2", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(mth207, mth201)));
-    Course csc430 = new Course("Networks", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc326)));
-    Course csc400 = new Course("Capstone", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc340)),
-        new ArrayList<Course>(Arrays.asList(eng202, com203)));
-    Course mth305 = new Course("Statistics", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(mth201)));
-    Course csc500 = new Course("Professional Internship", true, true, false, 1,
-        new ArrayList<Course>(), new ArrayList<Course>(Arrays.asList(csc375)));
-    Course csc1 = new Course("CS elective 1", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc310)));
-    Course csc2 = new Course("CS elective 2", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc310)));
-    Course csc3 = new Course("CS elective 3", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc310)));
-    Course csc4 = new Course("CS elective 4", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc310)));
-    Course csc5 = new Course("CS elective 5", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(csc310)));
-    Course mth1 = new Course("MTH elective", true, true, false, 3,
-        new ArrayList<Course>(Arrays.asList(mth201)));
-    Course hum1 = new Course("Humanities 1", true, false, false, 3, new ArrayList<Course>());
-    Course hum2 = new Course("Humanities 2", true, false, false, 3, new ArrayList<Course>());
-    Course hum3 = new Course("Humanities 3", true, false, false, 3, new ArrayList<Course>());
-    Course hum4 = new Course("Humanities 4", true, false, false, 3, new ArrayList<Course>());
-    Course hum5 = new Course("Humanities 5", true, false, false, 3, new ArrayList<Course>());
-    Course felec = new Course("Free Elective", true, false, false, 3, new ArrayList<Course>());
-    courses.add(csc243);
-    courses.add(felec);
-    courses.add(hum5);
-    courses.add(hum4);
-    courses.add(hum3);
-    courses.add(hum2);
-    courses.add(hum1);
-    courses.add(mth1);
-    courses.add(csc5);
-
-    return courses;
-  }
-
-  public static void main(String[] args) {
-
-  }
-
+        public static void main(String[] args) {
+                List<Course> courses = loadCourses();
+                System.out.println("Loaded courses: " + courses);
+        }
 }

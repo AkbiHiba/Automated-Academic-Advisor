@@ -230,7 +230,7 @@ public class GUICreateStudent extends JFrame implements ActionListener {
 
     // nb of semesters
     JPanel nbpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-    JLabel semNbLabel = new JLabel("How many semesters have you completed? (Summers not included)");
+    JLabel semNbLabel = new JLabel("How many semesters have you completed? (Summers not included) ");
     semNbField = new JTextField(20);
     nbpanel.add(semNbLabel);
     nbpanel.add(semNbField);

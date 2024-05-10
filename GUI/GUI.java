@@ -77,11 +77,10 @@ public class GUI extends JFrame implements ActionListener {
     homePanel.add(outerPanel, BorderLayout.NORTH);
 
     // copyright panel
-    JPanel copyRightPanel = new JPanel();
-    copyRightPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+    JPanel copyRightPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
     JLabel copyrightLabel = new JLabel(
-        "� 2024 Lebanese American University. All rights reserved. This Automatic Academic Advisor application is protected by copyright.");
-    copyrightLabel.setFont(copyrightLabel.getFont().deriveFont(Font.PLAIN, 8));
+        "© 2024 Lebanese American University. All rights reserved.");
+    copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
     copyRightPanel.add(copyrightLabel);
     homePanel.add(copyRightPanel, BorderLayout.SOUTH);
 
@@ -185,11 +184,10 @@ public class GUI extends JFrame implements ActionListener {
     aboutPanel.add(scrollPane, BorderLayout.CENTER);
 
     // copyright panel
-    JPanel copyRightPanel = new JPanel();
-    copyRightPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+    JPanel copyRightPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
     JLabel copyrightLabel = new JLabel(
-        "� 2024 Lebanese American University. All rights reserved. This Automatic Academic Advisor application is protected by copyright.");
-    copyrightLabel.setFont(copyrightLabel.getFont().deriveFont(Font.PLAIN, 8));
+        "© 2024 Lebanese American University. All rights reserved.");
+    copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
     copyRightPanel.add(copyrightLabel);
     aboutPanel.add(copyRightPanel, BorderLayout.SOUTH);
     return aboutPanel;

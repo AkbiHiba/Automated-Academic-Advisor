@@ -1,30 +1,42 @@
 package GUI;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.List;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import javax.swing.BorderFactory;
 import javax.swing.Box;
-import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
+import javax.swing.border.EmptyBorder;
 
+import app.GraduationPlanner;
+import app.Init;
 import app.InitUser;
+import entities.Course;
+import entities.Node;
+import entities.Semester;
 import entities.User;
 
 /**
  * GUI of the student First thing to see when running.
  */
-public class GUIStudent extends JFrame implements ActionListener
-{
+public class GUIStudent extends JFrame implements ActionListener {
   /**
    * 
    */
@@ -33,17 +45,15 @@ public class GUIStudent extends JFrame implements ActionListener
   private JTabbedPane tabs;
   private User user;
 
-  public GUIStudent(File f)
-  {
+  public GUIStudent(File f) {
     tabs = new JTabbedPane(JTabbedPane.TOP);
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    this.file=f;
+    this.file = f;
     user = InitUser.loadUser(file);
     init();
   }
 
-  private void init()
-  {
+  private void init() {
 
     // Create panels for new windows (content displayed within tabs)
     JPanel homePanel = createHomePanel();
@@ -66,78 +76,87 @@ public class GUIStudent extends JFrame implements ActionListener
     setVisible(true);
   }
 
-  private JPanel createHomePanel()
-  {
-    JPanel homePanel;
-    homePanel = new JPanel(new BorderLayout());
+  private JPanel createHomePanel() {
+    JPanel homePanel = new JPanel(new BorderLayout());
     homePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     homePanel.add(Box.createHorizontalStrut(60), BorderLayout.WEST);
     homePanel.add(Box.createHorizontalStrut(60), BorderLayout.EAST);
 
-    JPanel outerPanel= panelHelperWelcome(user.getFname()+ ", welcome to the Automatic Academic Advisor","Find below the advising calendar.");
+    // Welcome panel that is always displayed
+    JPanel outerPanel = panelHelperWelcome("Welcome to the Automatic Academic Advisor",
+        user.getProjection() != null && !user.getProjection().isEmpty()
+            ? "Head to the Advising tab to modify your projection plan."
+            : "You do not have a projection plan yet. Head to the Advising tab to generate one.");
     homePanel.add(outerPanel, BorderLayout.NORTH);
 
-    // copyright panel
-    JPanel copyRightPanel = new JPanel();
-    copyRightPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+    // Optionally display the projection plan if it exists
+    if (user.getProjection() != null && !user.getProjection().isEmpty()) {
+      JScrollPane planPanel = ProjectionPlanComponent.createProjectionPlanPanel(user.getProjection());
+      homePanel.add(new JScrollPane(planPanel), BorderLayout.CENTER);
+    }
+
+    // Copyright panel
+    JPanel copyRightPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
     JLabel copyrightLabel = new JLabel(
-        "© 2024 Lebanese American University. All rights reserved. This Automatic Academic Advisor application is protected by copyright.");
-    copyrightLabel.setFont(copyrightLabel.getFont().deriveFont(Font.PLAIN, 8));
+        "Â© 2024 Lebanese American University. All rights reserved.");
+    copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
     copyRightPanel.add(copyrightLabel);
     homePanel.add(copyRightPanel, BorderLayout.SOUTH);
 
-    // Add the home panel to the frame
     return homePanel;
   }
 
-  private JPanel createAboutPanel()
-  {
-
+  private JPanel createAboutPanel() {
     JPanel aboutPanel = new JPanel(new BorderLayout());
-    aboutPanel.setBorder(BorderFactory.createEmptyBorder(30, 10, 10, 10));
-    aboutPanel.add(Box.createHorizontalStrut(60), BorderLayout.WEST);
-    aboutPanel.add(Box.createHorizontalStrut(60), BorderLayout.EAST);
+    aboutPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30)); // More balanced padding
 
-    JTextArea textArea = new JTextArea(20, 50); // Adjust rows and columns as needed
-    textArea.setLineWrap(true);
-    textArea.setWrapStyleWord(true);
-    textArea.setEditable(false);
-
-    // Add some sample text
-    String text = "This is a large amount of text that will be displayed \nin a scrollable text box. You can add any content here. \nThis text box allows you to scroll through the content if it's too large to fit in the window.";
-    textArea.append(text);
-    JScrollPane scrollPane = new JScrollPane(textArea);
-    scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS); // Always show
-                                                                                  // scroll bar
+    // Using JTextPane for rich text formatting
+    JTextPane textPane = new JTextPane();
+    textPane.setContentType("text/html"); // Set content type to HTML
+    textPane.setEditable(false); // Make it non-editable
+    textPane.setText(
+        "<html><body style='font-family: SansSerif; font-size: 12pt;'>" +
+            "<h1>Welcome to the Automatic Academic Advisor</h1>" +
+            "<p>This application is designed to assist students in planning their academic journey effectively. " +
+            "Below you can find information about course scheduling, degree requirements, and more.</p>" +
+            "<p>For more information, please visit our <a href='http://www.lau.edu.lb'>website</a>.</p>" +
+            "</body></html>");
+    JScrollPane scrollPane = new JScrollPane(textPane);
+    scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
     aboutPanel.add(scrollPane, BorderLayout.CENTER);
 
-    // copyright panel
-    JPanel copyRightPanel = new JPanel();
-    copyRightPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+    // Enhanced copyright panel
+    JPanel copyRightPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
     JLabel copyrightLabel = new JLabel(
-        "© 2024 Lebanese American University. All rights reserved. This Automatic Academic Advisor application is protected by copyright.");
-    copyrightLabel.setFont(copyrightLabel.getFont().deriveFont(Font.PLAIN, 8));
+        "Â© 2024 Lebanese American University. All rights reserved.");
+    copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
     copyRightPanel.add(copyrightLabel);
     aboutPanel.add(copyRightPanel, BorderLayout.SOUTH);
+
     return aboutPanel;
   }
 
   // CATALOG displays courses and their infos and all
-  private JPanel createCatalogPanel()
-  {
+  private JPanel createCatalogPanel() {
+
+    Init init = new Init(user.getCompletedCourses());
+    List<Node> allCourses = init.getAllcoursesNodes(); // Fetch all courses
 
     JPanel catalogPanel = new JPanel(new BorderLayout());
     catalogPanel.setBorder(BorderFactory.createEmptyBorder(30, 10, 10, 10));
     catalogPanel.add(Box.createHorizontalStrut(60), BorderLayout.WEST);
     catalogPanel.add(Box.createHorizontalStrut(60), BorderLayout.EAST);
 
-    // copyright panel
-    JPanel copyRightPanel = new JPanel();
-    copyRightPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+    // Initialize and add the CourseCatalogPanel
+    CourseCatalog courseCatalogPanel = new CourseCatalog(allCourses);
+    catalogPanel.add(courseCatalogPanel, BorderLayout.CENTER); // Add the course catalog panel to the main panel
+
+    // Copyright panel
+    JPanel copyRightPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
     JLabel copyrightLabel = new JLabel(
-        "© 2024 Lebanese American University. All rights reserved. This Automatic Academic Advisor application is protected by copyright.");
-    copyrightLabel.setFont(copyrightLabel.getFont().deriveFont(Font.PLAIN, 8));
+        "Â© 2024 Lebanese American University. All rights reserved.");
+    copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
     copyRightPanel.add(copyrightLabel);
     catalogPanel.add(copyRightPanel, BorderLayout.SOUTH);
 
@@ -145,71 +164,68 @@ public class GUIStudent extends JFrame implements ActionListener
   }
 
   // USER INFO displays courses and their infos and all
-  private JPanel createUserInfoPanel()
-  {
-
+  private JPanel createUserInfoPanel() {
     JPanel userInfoPanel = new JPanel(new BorderLayout());
-    userInfoPanel.setBorder(BorderFactory.createEmptyBorder(30, 10, 10, 10));
-    userInfoPanel.add(Box.createHorizontalStrut(60), BorderLayout.WEST);
-    userInfoPanel.add(Box.createHorizontalStrut(60), BorderLayout.EAST);
+    userInfoPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+    userInfoPanel.setBackground(new Color(245, 245, 245)); // Set a light gray background for the panel
 
-    JPanel outerPanel= panelHelperWelcome("Your Profile","Find below your student information.");
-    userInfoPanel.add(outerPanel, BorderLayout.NORTH);
-    
-    JPanel mainPanel = new JPanel();
-    mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+    // Header Panel with welcome message
+    JPanel headerPanel = new JPanel(new BorderLayout());
+    headerPanel.setBackground(new Color(233, 236, 239)); // Lighter shade for the header
+    JLabel welcomeLabel = new JLabel("Your Profile", JLabel.CENTER);
+    welcomeLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
+    headerPanel.add(welcomeLabel, BorderLayout.CENTER);
+    userInfoPanel.add(headerPanel, BorderLayout.NORTH);
 
-    JPanel fname = panelHelper("First name: ", user.getFname());
-    JPanel lname = panelHelper("Last name: ", user.getLname());
-    JPanel id = panelHelper("ID: ", user.getID());
-    JPanel major = panelHelper("Major: ", user.getMajor());
-    JPanel minor = panelHelper("Minor: ", user.getMinor());
-    JPanel startSem = panelHelper("First Enrolled Semester: ", user.getStartSemester());
-    JPanel completedCRds = panelHelper("Number of Credits Completed: ", Integer.toString(user.getCreditsCompleted()));
-    
-    mainPanel.add(fname);
-    mainPanel.add(lname);
-    mainPanel.add(id);
-    mainPanel.add(major);
-    mainPanel.add(minor);
-    mainPanel.add(startSem);
-    mainPanel.add(completedCRds);
+    // Main content panel for user details
+    JPanel detailsPanel = new JPanel();
+    detailsPanel.setLayout(new GridLayout(0, 2, 10, 10)); // Use GridLayout for evenly spaced rows and columns
+    detailsPanel.setBorder(new EmptyBorder(20, 50, 20, 50));
+    detailsPanel.setBackground(new Color(245, 245, 245));
 
-    userInfoPanel.add(mainPanel, BorderLayout.NORTH);
+    // Add user details fields
+    detailsPanel.add(createDetailComponent("First name", user.getFname()));
+    detailsPanel.add(createDetailComponent("Last name", user.getLname()));
+    detailsPanel.add(createDetailComponent("ID", user.getID()));
+    detailsPanel.add(createDetailComponent("Major", user.getMajor()));
+    detailsPanel.add(createDetailComponent("Minor", user.getMinor()));
+    detailsPanel.add(createDetailComponent("First Enrolled Semester", user.getStartSemester()));
+    detailsPanel.add(createDetailComponent("Credits Completed", Integer.toString(user.getCreditsCompleted())));
+    detailsPanel.add(createDetailComponent("Semesters Completed", Integer.toString(user.getNbSemestersCompleted())));
 
-    // copyright panel
-    JPanel copyRightPanel = new JPanel();
-    copyRightPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JLabel copyrightLabel = new JLabel(
-        "© 2024 Lebanese American University. All rights reserved. This Automatic Academic Advisor application is protected by copyright.");
-    copyrightLabel.setFont(copyrightLabel.getFont().deriveFont(Font.PLAIN, 8));
-    copyRightPanel.add(copyrightLabel);
-    userInfoPanel.add(copyRightPanel, BorderLayout.SOUTH);
+    userInfoPanel.add(detailsPanel, BorderLayout.CENTER);
+
+    // Footer panel for copyright information
+    JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+    footerPanel.setBackground(new Color(233, 236, 239));
+    JLabel copyrightLabel = new JLabel("Â© 2024 Lebanese American University. All rights reserved.");
+    copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
+    footerPanel.add(copyrightLabel);
+    userInfoPanel.add(footerPanel, BorderLayout.SOUTH);
 
     return userInfoPanel;
   }
 
-  
-  /**Helper function to create fields in user Info*/
-  private JPanel panelHelper(String labelText, String field)
-  {
+  // Helper method to create a JPanel for each detail with a label and value
+  private JPanel createDetailComponent(String label, String value) {
+    JPanel panel = new JPanel(new BorderLayout());
+    panel.setBackground(new Color(245, 245, 245)); // Match the background with the main panel
 
-    JPanel panel = new JPanel();
-    panel.setLayout(new FlowLayout(FlowLayout.LEFT));
+    JLabel labelComponent = new JLabel(label + ": ");
+    labelComponent.setFont(new Font("SansSerif", Font.BOLD, 14));
+    panel.add(labelComponent, BorderLayout.WEST);
 
-    JLabel label = new JLabel(labelText);
-    label.setFont(label.getFont().deriveFont(Font.BOLD));
-    panel.add(label);
-
-    JLabel fieldLabel = new JLabel(field);
-    panel.add(fieldLabel);
+    JLabel valueComponent = new JLabel(value);
+    valueComponent.setFont(new Font("SansSerif", Font.PLAIN, 14));
+    panel.add(valueComponent, BorderLayout.CENTER);
 
     return panel;
   }
-  
-  /**Helper fucntion to create the explanatory text at the begining to each panel*/
-  private JPanel panelHelperWelcome(String title, String text) 
-  {
+
+  /**
+   * Helper fucntion to create the explanatory text at the begining to each panel
+   */
+  private JPanel panelHelperWelcome(String title, String text) {
 
     FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 0, 0);
     JPanel outerPanel = new JPanel(flowLayout);
@@ -221,35 +237,209 @@ public class GUIStudent extends JFrame implements ActionListener
     optionLabel.setFont(optionLabel.getFont().deriveFont(Font.PLAIN, 12));
     textPanel.add(optionLabel);
     outerPanel.add(textPanel);
-    
+
     return outerPanel;
   }
 
   // ADVISING PANEL displays the advising
-  private JPanel createAdvisingPanel()
-  {
-
+  private JPanel createAdvisingPanel() {
     JPanel advisingPanel = new JPanel(new BorderLayout());
     advisingPanel.setBorder(BorderFactory.createEmptyBorder(30, 10, 10, 10));
-    advisingPanel.add(Box.createHorizontalStrut(60), BorderLayout.WEST);
-    advisingPanel.add(Box.createHorizontalStrut(60), BorderLayout.EAST);
 
-    // copyright panel
-    JPanel copyRightPanel = new JPanel();
-    copyRightPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-    JLabel copyrightLabel = new JLabel(
-        "© 2024 Lebanese American University. All rights reserved. This Automatic Academic Advisor application is protected by copyright.");
-    copyrightLabel.setFont(copyrightLabel.getFont().deriveFont(Font.PLAIN, 8));
-    copyRightPanel.add(copyrightLabel);
-    advisingPanel.add(copyRightPanel, BorderLayout.SOUTH);
+    // Title
+    JLabel titleLabel = new JLabel("Course Projection Plan");
+    titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+    advisingPanel.add(titleLabel, BorderLayout.NORTH);
+
+    if (user.getProjection() != null && !user.getProjection().isEmpty()) {
+      // If there is an existing plan, display it with a customize button
+      JScrollPane planScrollPane = ProjectionPlanComponent.createProjectionPlanPanel(user.getProjection());
+      advisingPanel.add(planScrollPane, BorderLayout.CENTER);
+
+      JButton customizeButton = new JButton("Customize");
+      customizeButton.addActionListener(e -> customizePlan());
+      JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+      buttonPanel.add(customizeButton);
+      advisingPanel.add(buttonPanel, BorderLayout.SOUTH);
+    } else {
+      // Use JTextPane for rich text display of constraints
+      JTextPane textPane = new JTextPane();
+      textPane.setContentType("text/html");
+      textPane.setEditable(false);
+      textPane.setBackground(new Color(245, 245, 245));
+      textPane.setText(
+          "<html><body style='font-family:Segoe UI; font-size:12pt;'>" +
+              "<p>Based on your data, we will be generating an initial course plan for the upcoming semesters.</p>" +
+              "<ul>" +
+              "<li><b>No more than 18 credits per semester</b> are allowed, except for the last semester, which can have <b>21 credits</b>.</li>"
+              +
+              "<li>A course cannot be taken unless <b>all its prerequisites</b> have been completed.</li>" +
+              "<li>Lab must be taken at the same time as the course on the first try.</li>" +
+              "<li>Up to <b>13 major-related credits</b> are allowed in a semester.</li>" +
+              "<li><b>Order of importance:</b> Full credits, major-related, summer semesters.</li>" +
+              "</ul>" +
+              "<p>Projection will be attempted in the following order:</p>" +
+              "<ol>" +
+              "<li>Without summers, maximum regular credits, prioritizing major-related courses.</li>" +
+              "<li>Without summers, allowing for a heavier CS semester.</li>" +
+              "<li>Without summers, extra credits allowed (18/21).</li>" +
+              "<li>Allowing summers.</li>" +
+              "</ol>" +
+              "</body></html>");
+      JScrollPane scrollPane = new JScrollPane(textPane);
+      scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+      advisingPanel.add(scrollPane, BorderLayout.CENTER);
+
+      // Button to generate course projection plan
+      JButton generateButton = new JButton("Generate Course Projection Plan");
+      generateButton.addActionListener(e -> generateGraduationPlanFromGUI(null));
+      JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+      buttonPanel.add(generateButton);
+      advisingPanel.add(buttonPanel, BorderLayout.SOUTH);
+    }
 
     return advisingPanel;
   }
 
+  // Method to extract user data from GUI and call projection plan method
+  private void generateGraduationPlanFromGUI(int[] summerPreferences) {
+    // Extract user data from user profile
+    List<Course> completedCourses = user.getCompletedCourses();
+    int completedSemesters = user.getNbSemestersCompleted();
+    int completedCredits = user.getCreditsCompleted(); // Extract from GUI components
+    int startSemester;
+
+    if (user.getStartSemester().equals("FALL")) { // Use .equals() for string comparison in Java
+      startSemester = 0;
+    } else {
+      startSemester = 1;
+    }
+
+    // Call projection plan method from the GraduationPlanner class
+    List<Semester> plan = GraduationPlanner.generateGraduationPlan(completedCourses, completedSemesters,
+        completedCredits, startSemester, summerPreferences);
+
+    // Check if the plan is not empty and display it
+    if (plan != null && !plan.isEmpty()) {
+      displayPlan(plan);
+    } else {
+      displayErrorMessage("No valid graduation plan could be found."); // Display an error message if the plan is null
+                                                                       // or empty
+    }
+  }
+
+  private void displayPlan(List<Semester> plan) {
+    JScrollPane planScrollPane = ProjectionPlanComponent.createProjectionPlanPanel(plan);
+
+    // Buttons for plan management
+    JButton saveButton = new JButton("Save");
+    saveButton.addActionListener(e -> saveUserPlan(plan));
+    JButton customizeButton = new JButton("Customize");
+    customizeButton.addActionListener(e -> customizePlan());
+
+    JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+    buttonPanel.add(saveButton);
+    buttonPanel.add(customizeButton);
+
+    JPanel mainPanel = new JPanel(new BorderLayout());
+    mainPanel.add(planScrollPane, BorderLayout.CENTER);
+    mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+    JPanel advisingPanel = (JPanel) tabs.getComponentAt(tabs.indexOfTab("Advising"));
+    advisingPanel.removeAll();
+    advisingPanel.add(mainPanel, BorderLayout.CENTER);
+    advisingPanel.revalidate();
+    advisingPanel.repaint();
+  }
+
+  private void saveUserPlan(List<Semester> plan) {
+    user.setProjection(plan);
+    File updatedFile = InitUser.saveUser(user);
+    if (updatedFile != null) {
+      JOptionPane.showMessageDialog(this, "Plan saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+      // reloadUserData(updatedFile);
+    } else {
+      JOptionPane.showMessageDialog(this, "Failed to save the plan.", "Error", JOptionPane.ERROR_MESSAGE);
+    }
+  }
+
+  private void customizePlan() {
+    // Create a panel to hold buttons
+    JPanel panel = new JPanel(new GridLayout(3, 1, 5, 5));
+    JButton btnSpecifySummer = new JButton("Specify Summer");
+    JButton btnSpecifyCredits = new JButton("Specify Credits");
+    JButton btnSpecifyCourses = new JButton("Specify Courses");
+
+    // Add buttons to panel
+    panel.add(btnSpecifySummer);
+    panel.add(btnSpecifyCredits);
+    panel.add(btnSpecifyCourses);
+
+    // Adding action listeners to buttons
+    btnSpecifySummer.addActionListener(e -> specifySummer());
+    btnSpecifyCredits.addActionListener(e -> specifyCredits());
+    btnSpecifyCourses.addActionListener(e -> specifyCourses());
+
+    // Create a dialog that contains the panel
+    JOptionPane optionPane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null,
+        new Object[] {}, null);
+
+    JDialog dialog = optionPane.createDialog("Customize Plan Options");
+    dialog.setVisible(true);
+
+    dialog.dispose(); // Dispose the dialog after selection
+  }
+
+  private void specifySummer() {
+    int startSemester = user.getStartSemester().equals("FALL") ? 0 : 1;
+    List<Semester> semesters = user.getProjection();
+    int numOfRegularSemestersinPlan = semesters.stream().filter(s -> !s.isSummer()).mapToInt(s -> 1).sum();
+    numOfRegularSemestersinPlan += user.getNbSemestersCompleted();
+
+    int numOfSummerSemestersinPlan = (int) semesters.stream().filter(Semester::isSummer).count();
+    int maxNumOfSummers = Semester.getMaxSummers(numOfRegularSemestersinPlan, startSemester);
+    int allowedNumofSummers = maxNumOfSummers - numOfSummerSemestersinPlan;
+
+    System.out.println(numOfRegularSemestersinPlan + " " + numOfSummerSemestersinPlan + " " + maxNumOfSummers + " "
+        + allowedNumofSummers);
+
+    List<int[]> summerCombinations = Semester.generateCombinations(maxNumOfSummers);
+    String[] options = new String[summerCombinations.size()];
+    for (int i = 0; i < summerCombinations.size(); i++) {
+      int[] combination = summerCombinations.get(i);
+      options[i] = Arrays.stream(combination)
+          .mapToObj(num -> num == 0 ? "No" : "Yes")
+          .collect(Collectors.joining(", "));
+      options[i] = "Summer 1: " + options[i].split(", ")[0] + ", Summer 2: " + options[i].split(", ")[1];
+    }
+
+    int selectedIndex = JOptionPane.showOptionDialog(null, "Select your preferred combination of summer semesters:",
+        "Customize Summer Semesters", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options,
+        options[0]);
+
+    if (selectedIndex >= 0) {
+      int[] selectedCombination = summerCombinations.get(selectedIndex);
+      generateGraduationPlanFromGUI(selectedCombination);
+    } else {
+      JOptionPane.showMessageDialog(null, "No selection was made.", "No Selection", JOptionPane.INFORMATION_MESSAGE);
+    }
+  }
+
+  private void specifyCredits() {
+    // Implementation for specifying credits
+  }
+
+  private void specifyCourses() {
+    // Implementation for specifying courses
+  }
+
+  private void displayErrorMessage(String message) {
+    JOptionPane.showMessageDialog(this, message, "Graduation Plan Error", JOptionPane.ERROR_MESSAGE);
+  }
+
   /** Click behaviors on different elements */
   @Override
-  public void actionPerformed(ActionEvent e)
-  {
+  public void actionPerformed(ActionEvent e) {
 
   }
 

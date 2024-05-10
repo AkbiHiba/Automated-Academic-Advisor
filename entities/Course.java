@@ -13,36 +13,38 @@ import java.util.List;
  * 
  */
 public class Course implements Serializable {
-  /**
-   * 
-   */
-  private static final long serialVersionUID = 4890392138708219513L;
+  private String code;
   private String name;
   private boolean required;
   private boolean major;
   private boolean isLab; // whether the course is a lab or not
   private Course lab; // If course is a lab, this is the course of the lab. If this is a course,
                       // this is the lab of that course.
+  private boolean isCompleted; // if couse is already taken or not.
   private int crds;
   private List<Course> prereq;
   private List<Course> coreq;
 
   // constructor
-  public Course(String name, boolean required, boolean major, boolean isLab, int crds,
-      List<Course> prereq) {
+  public Course(String code, String name, boolean required, boolean major, boolean isLab, int crds,
+      List<Course> prereq, boolean isCompleted) {
     super();
+    this.code = code;
     this.name = name;
     this.required = required;
     this.major = major;
     this.isLab = isLab;
     this.crds = crds;
     this.prereq = prereq;
+    this.isCompleted = isCompleted;
+
     this.coreq = new ArrayList<Course>();
   }
 
-  public Course(String name, boolean required, boolean major, boolean isLab, int crds,
-      List<Course> prereq, List<Course> coreq) {
+  public Course(String code, String name, boolean required, boolean major, boolean isLab, int crds,
+      List<Course> prereq, List<Course> coreq, boolean isCompleted) {
     super();
+    this.code = code;
     this.name = name;
     this.required = required;
     this.major = major;
@@ -50,6 +52,15 @@ public class Course implements Serializable {
     this.crds = crds;
     this.prereq = prereq;
     this.coreq = coreq;
+    this.isCompleted = isCompleted;
+  }
+
+  public String getCode() {
+    return this.code;
+  }
+
+  public void setCode(String code) {
+    this.code = code;
   }
 
   public String getName() {
@@ -138,6 +149,14 @@ public class Course implements Serializable {
 
   public String toString() {
     return name;
+  }
+
+  public boolean getisCompleted() {
+    return this.isCompleted;
+  }
+
+  public void setisCompleted(boolean isCompleted) {
+    this.isCompleted = isCompleted;
   }
 
   // two courses are equal if they have the same name

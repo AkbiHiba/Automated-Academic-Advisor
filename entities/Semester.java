@@ -1,9 +1,10 @@
 package entities;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Semester {
+public class Semester implements Serializable {
 
   private String name;
   private boolean[] type; // [fall, spring, summer] like [false, false, true] for a summer
@@ -37,6 +38,15 @@ public class Semester {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public String getType() {
+    if (this.type[0]) {
+      return "FALL";
+    } else if (this.type[1])
+      return "SPRING";
+    else
+      return "SUMMER";
   }
 
   public boolean isSummer() {
@@ -94,7 +104,7 @@ public class Semester {
    * summer 2: no],
    * [summer 1: no, summer 2: no] ...etc
    */
-  private static List<int[]> generateCombinations(int k) {
+  public static List<int[]> generateCombinations(int k) {
     List<int[]> combinations = new ArrayList<>();
     int[] options = { 1, 0 };
 

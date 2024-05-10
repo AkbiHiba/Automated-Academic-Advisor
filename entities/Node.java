@@ -79,15 +79,19 @@ public class Node implements Serializable {
     return course.getName() + "(" + course.getCrds() + ")";
   }
 
-  // two nodes are equal if they are the same course
-  // @Override
-  // public boolean equals(Object obj)
-  // {
-  // if (this == obj) return true;
-  // if (obj == null || getClass() != obj.getClass()) return false;
-  //
-  // Node n = (Node) obj;
-  // return n.getCourse().equals(this.course);
-  // }
+  // two nodes
+  // are equal if
+  // they are
+  // the same course
 
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null || getClass() != obj.getClass())
+      return false;
+
+    Node n = (Node) obj;
+    return n.getCourse().equals(this.course);
+  }
 }
