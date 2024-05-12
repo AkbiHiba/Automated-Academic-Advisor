@@ -55,6 +55,8 @@ public class Graph implements Serializable {
 
   /** Update level of a node based on the prereq/coreq relation */
   public void updateLevel(Edge neighbor, Node parent) {
+    if (neighbor.getNode().getVisited())
+      return; // if node was visited already, skip
     int current_level = neighbor.getNode().getLevel();
 
     // if co req

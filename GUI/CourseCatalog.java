@@ -49,7 +49,7 @@ public class CourseCatalog extends JPanel {
         JTableHeader header = courseTable.getTableHeader();
         header.setBackground(new Color(33, 150, 243));
         header.setForeground(Color.WHITE);
-        header.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        header.setFont(new Font("Segoe UI", Font.BOLD, 14));
         header.setReorderingAllowed(false);
 
         TableColumnModel columnModel = courseTable.getColumnModel();

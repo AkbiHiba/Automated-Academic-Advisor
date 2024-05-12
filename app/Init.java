@@ -105,29 +105,29 @@ public class Init {
                                 new ArrayList<Course>(Arrays.asList(mth201)), new ArrayList<Course>(), false);
                 Course csc491 = new Course("CSC491", "Professional Experience", true, true, false, 1,
                                 new ArrayList<Course>(), new ArrayList<Course>(Arrays.asList(csc375)), false);
-                Course csc1 = new Course("CSC", "CSC elective 1", true, true, false, 3,
+                Course csc1 = new Course("CSC361", "CSC elective 1", true, true, false, 3,
                                 new ArrayList<Course>(Arrays.asList(csc310)), new ArrayList<Course>(), false);
-                Course csc2 = new Course("CSC", "CSC elective 2", true, true, false, 3,
+                Course csc2 = new Course("CSC362", "CSC elective 2", true, true, false, 3,
                                 new ArrayList<Course>(Arrays.asList(csc310)), new ArrayList<Course>(), false);
-                Course csc3 = new Course("CSC", "CSC elective 3", true, true, false, 3,
+                Course csc3 = new Course("CSC363", "CSC elective 3", true, true, false, 3,
                                 new ArrayList<Course>(Arrays.asList(csc310)), new ArrayList<Course>(), false);
-                Course csc4 = new Course("CSC", "CSC elective 4", true, true, false, 3,
+                Course csc4 = new Course("CSC364", "CSC elective 4", true, true, false, 3,
                                 new ArrayList<Course>(Arrays.asList(csc310)), new ArrayList<Course>(), false);
-                Course csc5 = new Course("CSC", "CSC elective 5", true, true, false, 3,
+                Course csc5 = new Course("CSC365", "CSC elective 5", true, true, false, 3,
                                 new ArrayList<Course>(Arrays.asList(csc310)), new ArrayList<Course>(), false);
-                Course mth1 = new Course("MTH", "Math Elective", true, true, false, 3,
+                Course mth1 = new Course("MTH311", "Math Elective", true, true, false, 3,
                                 new ArrayList<Course>(Arrays.asList(mth201)), new ArrayList<Course>(), false);
-                Course hum1 = new Course("", "LAC Elective 1", true, false, false, 3, new ArrayList<Course>(),
+                Course hum1 = new Course("LAC301", "LAC Elective 1", true, false, false, 3, new ArrayList<Course>(),
                                 new ArrayList<Course>(), false);
-                Course hum2 = new Course("", "LAC Elective 2", true, false, false, 3, new ArrayList<Course>(),
+                Course hum2 = new Course("LAC302", "LAC Elective 2", true, false, false, 3, new ArrayList<Course>(),
                                 new ArrayList<Course>(), false);
-                Course hum3 = new Course("", "LAC Elective 3", true, false, false, 3, new ArrayList<Course>(),
+                Course hum3 = new Course("LAC303", "LAC Elective 3", true, false, false, 3, new ArrayList<Course>(),
                                 new ArrayList<Course>(), false);
-                Course hum4 = new Course("", "LAC Elective 4", true, false, false, 3, new ArrayList<Course>(),
+                Course hum4 = new Course("LAC304", "LAC Elective 4", true, false, false, 3, new ArrayList<Course>(),
                                 new ArrayList<Course>(), false);
-                Course hum5 = new Course("", "LAC Elective 5", true, false, false, 3, new ArrayList<Course>(),
+                Course hum5 = new Course("LAC305", "LAC Elective 5", true, false, false, 3, new ArrayList<Course>(),
                                 new ArrayList<Course>(), false);
-                Course felec = new Course("", "Free Elective", true, false, false, 3, new ArrayList<Course>(),
+                Course felec = new Course("LAC306", "Free Elective", true, false, false, 3, new ArrayList<Course>(),
                                 new ArrayList<Course>(), false);
 
                 unavailableSummerCourses.add(csc243);
@@ -140,6 +140,12 @@ public class Init {
                 unavailableSummerCourses.add(csc430);
                 unavailableSummerCourses.add(csc490);
                 unavailableSummerCourses.add(csc447);
+                unavailableSummerCourses.add(csc599);
+                unavailableSummerCourses.add(csc1);
+                unavailableSummerCourses.add(csc2);
+                unavailableSummerCourses.add(csc3);
+                unavailableSummerCourses.add(csc4);
+                unavailableSummerCourses.add(csc5);
 
                 // Nodes with edges of appropriate weights
                 Node nhum1 = new Node(hum1, new ArrayList<Edge>());
@@ -147,7 +153,6 @@ public class Init {
                 Node nhum3 = new Node(hum3, new ArrayList<Edge>());
                 Node nhum4 = new Node(hum4, new ArrayList<Edge>());
                 Node nhum5 = new Node(hum5, new ArrayList<Edge>());
-
                 Node nfelec = new Node(felec, new ArrayList<Edge>());
                 Node nlas204 = new Node(las204, new ArrayList<Edge>());
                 Node nbio209 = new Node(bio209, new ArrayList<Edge>());

@@ -234,7 +234,9 @@ public class GUIStudent extends JFrame implements ActionListener {
     detailsPanel.add(createDetailComponent("Major", user.getMajor()));
     detailsPanel.add(createDetailComponent("Minor", user.getMinor()));
     detailsPanel.add(createDetailComponent("First Enrolled Semester", user.getStartSemester()));
-    detailsPanel.add(createDetailComponent("Credits Completed", Integer.toString(user.getCreditsCompleted())));
+    detailsPanel.add(createDetailComponent("Credits Completed",
+        Integer.toString(user.getCreditsCompleted()) + " crds"));
+    detailsPanel.add(createDetailComponent("Standing", user.getStanding()));
     detailsPanel.add(createDetailComponent("Semesters Completed", Integer.toString(user.getNbSemestersCompleted())));
 
     userInfoPanel.add(detailsPanel, BorderLayout.CENTER);
@@ -410,6 +412,7 @@ public class GUIStudent extends JFrame implements ActionListener {
   }
 
   private void customizePlan() {
+
     // Create a panel to hold buttons
     JPanel panel = new JPanel(new GridLayout(3, 1, 5, 5));
     JButton btnSpecifySummer = new JButton("Specify Summer");
@@ -421,19 +424,31 @@ public class GUIStudent extends JFrame implements ActionListener {
     panel.add(btnSpecifyCredits);
     panel.add(btnSpecifyCourses);
 
-    // Adding action listeners to buttons
-    btnSpecifySummer.addActionListener(e -> specifySummer());
-    btnSpecifyCredits.addActionListener(e -> specifyCredits());
-    btnSpecifyCourses.addActionListener(e -> specifyCourses());
-
     // Create a dialog that contains the panel
     JOptionPane optionPane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null,
         new Object[] {}, null);
 
     JDialog dialog = optionPane.createDialog("Customize Plan Options");
+
+    // Adding action listeners to buttons
+    btnSpecifySummer.addActionListener(e -> {
+      specifySummer();
+      dialog.dispose();
+      return;
+    });
+    btnSpecifyCredits.addActionListener(e -> {
+      specifyCredits();
+      dialog.dispose();
+      return;
+    });
+    btnSpecifyCourses.addActionListener(e -> {
+      specifyCourses();
+      dialog.dispose();
+      return;
+    });
+
     dialog.setVisible(true);
 
-    dialog.dispose(); // Dispose the dialog after selection
   }
 
   private void specifySummer() {

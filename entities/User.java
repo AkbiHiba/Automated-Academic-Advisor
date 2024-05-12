@@ -15,7 +15,6 @@ public class User implements Serializable {
   private String ID;
   private int creditsCompleted;
   private int nbSemestersCompleted;
-  private String standing;
   private String major;
   private String minor;
   private String startSemester;
@@ -66,12 +65,27 @@ public class User implements Serializable {
     this.nbSemestersCompleted = nbSemestersCompleted;
   }
 
+  /**
+   * Function to calculate the standing of the student based on the completed
+   * credits
+   */
   public String getStanding() {
-    return standing;
-  }
+    int crds = 30;
+    for (Course c : completedCourses) {
+      crds += c.getCrds();
+    }
+    String standing = "Freshman";
+    if (30 <= crds && crds <= 59) {
+      standing = "Sophomore";
+    } else if (60 <= crds && crds <= 89) {
+      standing = "Junior";
+    } else if (90 <= crds && crds <= 119) {
+      standing = "Senior";
+    } else if (crds >= 120) {
+      standing = "5th Year";
+    }
 
-  public void setStanding(String standing) {
-    this.standing = standing;
+    return standing;
   }
 
   public String getMajor() {

@@ -192,6 +192,36 @@ public class GraduationPlanner {
         }
 
         /**
+         * This function searches for the corequisites of a course and determines if the
+         * corequisites have been
+         * taken or not. if the corequisites have bene visited but not taken, then we
+         * cannot take this course.
+         * Else, we can take it, so we move on with the rest of the code.
+         * 
+         * @param node:        is the node we are deciding on
+         * @param noesAtlevel: is the list that contains all courses in that same level.
+         *                     Rememebr that corequsiites are suppsoed to be on the same
+         *                     level, so we do not want to look further than that
+         */
+        private static boolean hasCompletedCoreq(Node node, List<Node> nodesAtLevel, List<Node> coursesAtSemester) {
+                List<Course> corequisites = node.getCourse().getCoreq();
+                // if node has no corequisite, do nothing
+                if (corequisites.isEmpty()) {
+                        return true;
+                }
+                // course has coreqs
+                for (Node n : nodesAtLevel) {
+                        // if we foudn the coreq in the same level, and it was visited but not taken,
+                        // then skip
+                        if (corequisites.contains(n.getCourse())) {
+                                if (n.getVisited() && !coursesAtSemester.contains(n))
+                                        return false;
+                        }
+                }
+                return true;
+        }
+
+        /**
          * Function to determine the different credits allowed in a semester based on
          * different factors
          * like type of semester (summer or not), last semester (final or not) ...etc.
@@ -300,13 +330,21 @@ public class GraduationPlanner {
                                         List<Node> coursesAtCurrentSemester = new ArrayList<>();
                                         for (int j = 0; j < coursesToConsider.size(); j++) {
                                                 Node n = coursesToConsider.get(j);
+                                                // first check if my node needs processing
+                                                if (n.getVisited()) {
+                                                        continue;
+                                                }
+                                                n.setVisited(true); // set it to processed as if we are about to start
+                                                                    // processing
 
                                                 // handle summer list unavailability
-
                                                 if (semesters.get(currentSemester).isSummer()
                                                                 && unavailableSummerCourses.contains(n.getCourse()))
                                                         continue;
 
+                                                if (!hasCompletedCoreq(n, coursesToConsider,
+                                                                coursesAtCurrentSemester))
+                                                        continue;
                                                 boolean isMajor = n.getCourse().isMajor();
 
                                                 // System.out.println(currentLevel+" !!!!!"+n+" : (major) "+isMajor);
@@ -362,7 +400,7 @@ public class GraduationPlanner {
                                                                         }
                                                                         // Prevent lab/course from being
                                                                         // processed again
-                                                                        coursesToConsider.remove(labNode);
+                                                                        labNode.setVisited(true);
 
                                                                 } else // no lab issue
                                                                 {
@@ -394,12 +432,13 @@ public class GraduationPlanner {
 
                                         // Handling courses that were not picked for this current semester.
                                         for (Node course : map.get(currentLevel)) {
-                                                if (!semesters.get(currentSemester).getNodesAtSemester()
+                                                if (!semesters.get(currentLevel).getNodesAtSemester()
                                                                 .contains(course)) {
                                                         course.setLevel(course.getLevel() + 1); // push one level down
-                                                        graph.levelizefromRoot(course); // push all levels below
-                                                        map = graph.computeLevelMap();
+                                                        course.setVisited(false);
 
+                                                } else {
+                                                        course.setVisited(true);
                                                 }
                                         }
 
@@ -410,12 +449,6 @@ public class GraduationPlanner {
                                                         map = graph.computeLevelMap();
                                                 }
                                         }
-
-                                        // System.out.println("semester courses" + semesters.get(currentSemester));
-                                        // System.out.println("MAP AFTER 2nd loop LEVELIZATION" +
-                                        // map.get(currentLevel));
-
-                                        // System.out.println("MAP AFTER LEVELIZATION" + map.get(currentLevel));
 
                                         // move to next semester
                                         if (scheduleCourses(graph, map, finalPlan, semesters, currentLevel + 1,
@@ -435,10 +468,7 @@ public class GraduationPlanner {
                 // no more semester, and plan was incomplete
                 // System.out.println("******RETURNED FALSE AT " + currentSemester + "(" +
                 // newlyCompletedCredits + ")");
-                // semesters.stream().forEach(System.out::println); // printing
-                // // lien
-                // // by
-                // // line
+                // semesters.stream().forEach(System.out::println);
 
                 return false;
 

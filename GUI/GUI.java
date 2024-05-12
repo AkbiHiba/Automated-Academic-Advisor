@@ -20,7 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
@@ -166,30 +166,31 @@ public class GUI extends JFrame implements ActionListener {
 
   private JPanel createAboutPanel() {
     JPanel aboutPanel = new JPanel(new BorderLayout());
-    aboutPanel.setBorder(BorderFactory.createEmptyBorder(30, 10, 10, 10));
-    aboutPanel.add(Box.createHorizontalStrut(60), BorderLayout.WEST);
-    aboutPanel.add(Box.createHorizontalStrut(60), BorderLayout.EAST);
+    aboutPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
-    JTextArea textArea = new JTextArea(20, 50); // Adjust rows and columns as needed
-    textArea.setLineWrap(true);
-    textArea.setWrapStyleWord(true);
-    textArea.setEditable(false);
+    JTextPane textPane = new JTextPane();
+    textPane.setContentType("text/html");
+    textPane.setEditable(false);
+    textPane.setText(
+        "<html><body style='font-family: SansSerif; font-size: 12pt;'>" +
+            "<h1>Welcome to the Automatic Academic Advisor</h1>" +
+            "<p>This application is designed to assist students in planning their academic journey effectively. " +
+            "Below you can find information about course scheduling, degree requirements, and more.</p>" +
+            "<p>For more information, please visit our <a href='http://www.lau.edu.lb'>website</a>.</p>" +
+            "</body></html>");
+    JScrollPane scrollPane = new JScrollPane(textPane);
+    scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
-    // Add some sample text
-    String text = "\nThis needs to have some description about the academic advisor. Should be long and boring and nobody is reading it anyway.";
-    textArea.append(text);
-    JScrollPane scrollPane = new JScrollPane(textArea);
-    scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS); // Always show
-                                                                                  // scroll bar
     aboutPanel.add(scrollPane, BorderLayout.CENTER);
 
-    // copyright panel
+    // Enhanced copyright panel
     JPanel copyRightPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
     JLabel copyrightLabel = new JLabel(
         "© 2024 Lebanese American University. All rights reserved.");
     copyrightLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
     copyRightPanel.add(copyrightLabel);
     aboutPanel.add(copyRightPanel, BorderLayout.SOUTH);
+
     return aboutPanel;
   }
 
