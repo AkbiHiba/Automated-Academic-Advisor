@@ -7,9 +7,9 @@ import java.util.List;
 public class Semester implements Serializable {
 
   private String name;
-  private boolean[] type; // [fall, spring, summer] like [false, false, true] for a summer
+  private boolean[] type; // [FALL, SPRING, summer] like [false, false, true] for a summer
   private boolean isFinal; // is the last semester, this will be useful once we set a schedule
-  private int maxCrds; // probably not needed
+  private int userCredits; // probably not needed
   private int currentCrds; // curentCrds in this semester, probably not needed
   private List<Node> nodesAtSemester;
   public static final int REGULAR_SEMESTER_CREDIT_LIMIT = 18;
@@ -21,6 +21,14 @@ public class Semester implements Serializable {
     this.type = type;
     this.isFinal = false;
     this.nodesAtSemester = new ArrayList<>();
+  }
+
+  public Semester(String name, boolean[] type, int userCredits) {
+    this.name = name;
+    this.type = type;
+    this.isFinal = false;
+    this.nodesAtSemester = new ArrayList<>();
+    this.userCredits = userCredits;
   }
 
   public List<Node> getNodesAtSemester() {
@@ -76,12 +84,12 @@ public class Semester implements Serializable {
     // return name;
   }
 
-  public int getMaxCrds() {
-    return maxCrds;
+  public int getUserCredits() {
+    return userCredits;
   }
 
-  public void setMaxCrds(int max_crds) {
-    this.maxCrds = max_crds;
+  public void setUserCredits(int userCredits) {
+    this.userCredits = userCredits;
   }
 
   public int getCurrentCrds() {
@@ -128,7 +136,7 @@ public class Semester implements Serializable {
    *                        isthe total amount of regular semester needed (6 for a
    *                        regular projection plan).
    * @param startSemester
-   *                        is 0 for a start in fall, and 1 for a start in spring
+   *                        is 0 for a start in FALL, and 1 for a start in SPRING
    *                        example: [r,r,s,r,r,s,r,r] or
    *                        [r,r,s,r,r,r,r]
    */
@@ -151,9 +159,8 @@ public class Semester implements Serializable {
       if (startSemester == 0) // for a projection plan that start in fall
       {
         for (int j = 0; j < maxRegSemesters; j++) {
-          if (j == 0)
-            currentCombination.add(new Semester("Fall", new boolean[] { true, false, false }));
-          else if (j != 0 && j % 2 == 0) // index for a summer
+
+          if (j % 2 != 0) // index for a summer
           {
             if (summerCombinations.get(i)[summersAdded] == 1) {
               currentCombination.add(new Semester("Summer", new boolean[] { false, false, true }));
@@ -188,6 +195,97 @@ public class Semester implements Serializable {
     return semesterCombinations;
   }
 
+  // similar as the above but takes into consideration customization ( specific
+  // credits in a semester):
+  public static List<List<Semester>> generateSemestersCombinations(int maxRegSemesters, int startSemester,
+      int customSemesterIndex, int customCredits) {
+
+    // calculate how many sumemrs we cna add based on number of semesters
+    int max_summers = getMaxSummers(maxRegSemesters, startSemester);
+
+    // generate our combinations of summers
+    List<int[]> summerCombinations = generateCombinations(max_summers);
+    List<List<Semester>> semesterCombinations = new ArrayList<>();
+
+    for (int i = summerCombinations.size() - 1; i >= 0; i--)
+    // for every combination of summers , starting from no summers [0,0]
+
+    {
+      List<Semester> currentCombination = new ArrayList<Semester>();
+      int summersAdded = 0;
+      if (startSemester == 0) // for a projection plan that start in FALL
+      {
+        for (int j = 0; j < maxRegSemesters; j++) {
+          if (j == 0) {
+            if (j == customSemesterIndex) {
+              currentCombination
+                  .add(new Semester("FALL", new boolean[] { true, false, false }, customCredits));
+            } else {
+              currentCombination.add(new Semester("FALL", new boolean[] { true, false, false }));
+            }
+          } else if (j != 0 && j % 2 == 0) // index for a summer
+          {
+            if (summerCombinations.get(i)[summersAdded] == 1) {
+              if (j == customSemesterIndex) {
+                currentCombination
+                    .add(new Semester("SUMMER", new boolean[] { false, false, true }, customCredits));
+              } else {
+                currentCombination.add(new Semester("SUMMER", new boolean[] { false, false, true }));
+              }
+            }
+            summersAdded++;
+            if (j == customSemesterIndex) {
+              currentCombination
+                  .add(new Semester("FALL", new boolean[] { true, false, false }, customCredits));
+            } else {
+              currentCombination.add(new Semester("FALL", new boolean[] { true, false, false }));
+            }
+          } else {
+            if (j == customSemesterIndex) {
+              currentCombination
+                  .add(new Semester("SPRING", new boolean[] { false, true, false }, customCredits));
+            } else {
+              currentCombination.add(new Semester("SPRING", new boolean[] { false, true, false }));
+            }
+          }
+        }
+      } else if (startSemester == 1) // for a projection plan that starts in SPRING
+      {
+        for (int j = 0; j < maxRegSemesters; j++) {
+
+          if (j % 2 != 0) // index for a summer
+          {
+            if (summerCombinations.get(i)[summersAdded] == 1) {
+              if (j == customSemesterIndex) {
+                currentCombination
+                    .add(new Semester("SUMMER", new boolean[] { false, false, true }, customCredits));
+              } else {
+                currentCombination.add(new Semester("SUMMER", new boolean[] { false, false, true }));
+              }
+            }
+            summersAdded++;
+            if (j == customSemesterIndex) {
+              currentCombination
+                  .add(new Semester("FALL", new boolean[] { true, false, false }, customCredits));
+            } else {
+              currentCombination.add(new Semester("FALL", new boolean[] { true, false, false }));
+            }
+          } else if (j == customSemesterIndex) {
+            currentCombination
+                .add(new Semester("SPRING", new boolean[] { false, true, false }, customCredits));
+          } else {
+            currentCombination.add(new Semester("SPRING", new boolean[] { false, true, false }));
+          }
+        }
+
+      }
+      currentCombination.get(currentCombination.size() - 1).setFinal(true);
+      semesterCombinations.add(currentCombination);
+
+    }
+    return semesterCombinations;
+  }
+
   /**
    * Similar function as above, however, this function takes the user input
    * 
@@ -204,36 +302,36 @@ public class Semester implements Serializable {
 
     List<Semester> currentCombination = new ArrayList<Semester>();
     int summersAdded = 0;
-    if (startSemester == 0) // for a projection plan that start in fall
+    if (startSemester == 0) // for a projection plan that start in FALL
     {
       for (int j = 0; j < maxRegSemesters; j++) {
         if (j == 0)
-          currentCombination.add(new Semester("Fall", new boolean[] { true, false, false }));
+          currentCombination.add(new Semester("FALL", new boolean[] { true, false, false }));
         else if (j != 0 && j % 2 == 0) // index for a summer
         {
           if (summersUserPreference[summersAdded] == 1) {
-            currentCombination.add(new Semester("Summer", new boolean[] { false, false, true }));
+            currentCombination.add(new Semester("SUMMER", new boolean[] { false, false, true }));
 
           }
           summersAdded++;
-          currentCombination.add(new Semester("Fall", new boolean[] { true, false, false }));
+          currentCombination.add(new Semester("FALL", new boolean[] { true, false, false }));
         } else
-          currentCombination.add(new Semester("Spring", new boolean[] { false, true, false }));
+          currentCombination.add(new Semester("SPRING", new boolean[] { false, true, false }));
       }
-    } else if (startSemester == 1) // for a projection plan that starts in spring
+    } else if (startSemester == 1) // for a projection plan that starts in SPRING
     {
       for (int j = 0; j < maxRegSemesters; j++) {
 
         if (j % 2 != 0) // index for a summer
         {
           if (summersUserPreference[summersAdded] == 1) {
-            currentCombination.add(new Semester("Summer", new boolean[] { false, false, true }));
+            currentCombination.add(new Semester("SUMMER", new boolean[] { false, false, true }));
 
           }
           summersAdded++;
-          currentCombination.add(new Semester("Fall", new boolean[] { true, false, false }));
+          currentCombination.add(new Semester("FALL", new boolean[] { true, false, false }));
         } else
-          currentCombination.add(new Semester("Spring", new boolean[] { false, true, false }));
+          currentCombination.add(new Semester("SPRING", new boolean[] { false, true, false }));
       }
 
     }
@@ -247,11 +345,11 @@ public class Semester implements Serializable {
    * Function that calculate how many summers we can add based on number of
    * regular semesters
    * allowed and the start semester. For example, for 6 semesters starting in
-   * fall, we can only
-   * allow 2 summers. For 6 semesters starting in spring, we can allow 3 summers.
+   * FALL, we can only
+   * allow 2 summers. For 6 semesters starting in SPRING, we can allow 3 summers.
    * 
    * @param startSeemster
-   *                      is 0 for start in fall, 1 for start in spring
+   *                      is 0 for start in FALL, 1 for start in SPRING
    */
 
   public static int getMaxSummers(int maxRegSemesters, int startSemester) {

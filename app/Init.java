@@ -37,9 +37,11 @@ public class Init {
                 List<Node> allCoursesNodes = getAllcoursesNodes();
                 for (Node courseNode : allCoursesNodes) {
                         if (!completedCourses.contains(courseNode.getCourse())) {
-                                courseNode.getCourse().setisCompleted(true);
+                                courseNode.getCourse().setisCompleted(false);
                                 g.addNode(courseNode);
                         }
+                        courseNode.getCourse().setisCompleted(true);
+
                 }
         }
 

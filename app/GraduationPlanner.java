@@ -34,17 +34,18 @@ public class GraduationPlanner {
                 List<Course> completedCourses = Arrays.asList();
                 int completedSemesters = 0;
                 int completedCredits = 0;
-                int startSemester = 0;
-                int[] summerPreference = { 1, 0 };
+                int startSemester = 1;
+                int customSemester = 3;
+                int customCredits = 12;
 
                 generateGraduationPlan(completedCourses, completedSemesters,
                                 completedCredits,
-                                startSemester, summerPreference);
+                                startSemester, null, customSemester, customCredits);
         }
 
         public static List<Semester> generateGraduationPlan(List<Course> completedCourses, int completedSemesters,
                         int completedCredits,
-                        int startSemester, int[] semmerPreferencers) {
+                        int startSemester, int[] semmerPreferencers, int customSemmester, int customCredits) {
                 // initialize graph
                 Init i = new Init(completedCourses);
                 g = i.getGraph();
@@ -62,7 +63,7 @@ public class GraduationPlanner {
                 // contains what nodes each level has level 0 [a,b,b], level 1 [e,f,g] ...etc
                 HashMap<Integer, List<Node>> map = g.computeLevelMap();
 
-                System.out.println(map);
+                // System.out.println(map);
 
                 /******************************************************************************************************
                  * REACHABILITY AND LEVELIZATION OF GRAPH FINISHED- PROCEED TO FIND A SOLUTION
@@ -81,7 +82,7 @@ public class GraduationPlanner {
                                                                                           * This assumes that the
                                                                                           * completedSemesters given by
                                                                                           * the
-                                                                                          * user does not include
+                                                                                          * s * user does not include
                                                                                           * summers( it
                                                                                           * should not really matter to
                                                                                           * us).
@@ -105,7 +106,7 @@ public class GraduationPlanner {
                         List<List<Semester>> allCombinationsOfSemesters = semmerPreferencers == null ?
 
                                         Semester.generateSemestersCombinations(remainingSemesters,
-                                                        newStartSemester)
+                                                        newStartSemester, customSemmester, customCredits)
                                         : Semester.generateSemestersCombinations(remainingSemesters,
                                                         newStartSemester, semmerPreferencers);
 
@@ -199,6 +200,9 @@ public class GraduationPlanner {
          */
         private static int[] determineCreditLimits(Semester semester,
                         boolean allowExtraCreditsInLastSemester) {
+                if (semester.getUserCredits() > 0) {
+                        return new int[] { semester.getUserCredits() };
+                }
                 if (semester.isSummer()) {
                         return new int[] { SUMMER_SEMESTER_CREDIT_LIMIT };
                 } else if (semester.isFinal() && allowExtraCreditsInLastSemester) { // this for the last semester when
@@ -323,16 +327,24 @@ public class GraduationPlanner {
                                                                 boolean isLab = n.getCourse().isLab();
 
                                                                 if (isLab || hasLab)
-                                                                // ensure both lab and course are taken together, or
+                                                                // ensure both lab and course are taken
+                                                                // together, or
                                                                 // none is taken
                                                                 {
                                                                         Node labNode = findLabNode(n,
                                                                                         coursesToConsider);
-                                                                        if (currentCredits + n.getCourse().getCrds()
+                                                                        if (currentCredits + n.getCourse()
+                                                                                        .getCrds()
                                                                                         + labNode.getCourse()
                                                                                                         .getCrds() <= currentMaxCrds) {
                                                                                 coursesAtCurrentSemester.add(n);
-                                                                                coursesAtCurrentSemester.add(labNode);
+                                                                                coursesAtCurrentSemester
+                                                                                                .add(labNode);
+                                                                                n.getCourse().setisCompleted(
+                                                                                                true);
+                                                                                labNode.getCourse()
+                                                                                                .setisCompleted(
+                                                                                                                true);
 
                                                                                 semesters.get(currentSemester)
                                                                                                 .setNodesAtSemester(
@@ -342,43 +354,48 @@ public class GraduationPlanner {
                                                                                                 + labNode.getCourse()
                                                                                                                 .getCrds();
                                                                                 currentMajorRelatedCredits += n
-                                                                                                .getCourse().getCrds()
+                                                                                                .getCourse()
+                                                                                                .getCrds()
                                                                                                 + labNode.getCourse()
                                                                                                                 .getCrds();
 
                                                                         }
-                                                                        // Prevent lab/course from being processed again
+                                                                        // Prevent lab/course from being
+                                                                        // processed again
                                                                         coursesToConsider.remove(labNode);
 
                                                                 } else // no lab issue
                                                                 {
                                                                         coursesAtCurrentSemester.add(n);
+                                                                        n.getCourse().setisCompleted(true);
 
                                                                         semesters.get(currentSemester)
                                                                                         .setNodesAtSemester(
                                                                                                         coursesAtCurrentSemester);
-                                                                        currentCredits += n.getCourse().getCrds();
+                                                                        currentCredits += n.getCourse()
+                                                                                        .getCrds();
                                                                         if (isMajor)
                                                                                 currentMajorRelatedCredits += n
-                                                                                                .getCourse().getCrds();
-                                                                        // System.out.println(currentLevel+" !!!!!"+n+"
+                                                                                                .getCourse()
+                                                                                                .getCrds();
+                                                                        // System.out.println(currentLevel+"
+                                                                        // !!!!!"+n+"
                                                                         // TAKEN : (major) "+isMajor +" CRDS
                                                                         // "+
                                                                         // currentMajorRelatedCredits);
                                                                 }
+                                                                // }
                                                         }
                                                 }
 
                                         }
 
-                                        System.out.println("MAP BEFORE LEVELIZATION" + map.get(currentLevel));
+                                        // System.out.println("MAP BEFORE LEVELIZATION" + map.get(currentLevel));
 
                                         // Handling courses that were not picked for this current semester.
                                         for (Node course : map.get(currentLevel)) {
                                                 if (!semesters.get(currentSemester).getNodesAtSemester()
                                                                 .contains(course)) {
-                                                        System.out.println("at level" + currentLevel
-                                                                        + "the course pushed down :" + course);
                                                         course.setLevel(course.getLevel() + 1); // push one level down
                                                         graph.levelizefromRoot(course); // push all levels below
                                                         map = graph.computeLevelMap();
@@ -386,8 +403,6 @@ public class GraduationPlanner {
                                                 }
                                         }
 
-                                        System.out.println("MAP AFTER 1st loop LEVELIZATION" + map.get(currentLevel));
-
                                         for (Node course : map.get(currentLevel)) {
                                                 if (!semesters.get(currentSemester).getNodesAtSemester()
                                                                 .contains(course)) {
@@ -396,7 +411,9 @@ public class GraduationPlanner {
                                                 }
                                         }
 
-                                        System.out.println("MAP AFTER 2nd loop LEVELIZATION" + map.get(currentLevel));
+                                        // System.out.println("semester courses" + semesters.get(currentSemester));
+                                        // System.out.println("MAP AFTER 2nd loop LEVELIZATION" +
+                                        // map.get(currentLevel));
 
                                         // System.out.println("MAP AFTER LEVELIZATION" + map.get(currentLevel));
 
@@ -416,11 +433,12 @@ public class GraduationPlanner {
                 }
 
                 // no more semester, and plan was incomplete
-                System.out.println("******RETURNED FALSE AT " + currentSemester + "(" + newlyCompletedCredits + ")");
-                semesters.stream().forEach(System.out::println); // printing
-                                                                 // lien
-                                                                 // by
-                                                                 // line
+                // System.out.println("******RETURNED FALSE AT " + currentSemester + "(" +
+                // newlyCompletedCredits + ")");
+                // semesters.stream().forEach(System.out::println); // printing
+                // // lien
+                // // by
+                // // line
 
                 return false;
 

@@ -23,7 +23,14 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextPane;
+import javax.swing.JTextField;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.border.EmptyBorder;
+
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import app.GraduationPlanner;
 import app.Init;
@@ -55,6 +62,12 @@ public class GUIStudent extends JFrame implements ActionListener {
 
   private void init() {
 
+    setSize(500, 500);
+    setVisible(true);
+
+    // Setup the menu bar
+    setupMenuBar();
+
     // Create panels for new windows (content displayed within tabs)
     JPanel homePanel = createHomePanel();
     JPanel aboutPanel = createAboutPanel();
@@ -74,6 +87,37 @@ public class GUIStudent extends JFrame implements ActionListener {
 
     setSize(700, 500);
     setVisible(true);
+  }
+
+  private void setupMenuBar() {
+    JMenuBar menuBar = new JMenuBar();
+
+    // Create the "File" menu
+    JMenu fileMenu = new JMenu("File");
+    menuBar.add(fileMenu);
+
+    // Create and add the "Open" menu item
+    JMenuItem openItem = new JMenuItem("Open");
+    openItem.addActionListener(e -> openFile());
+    fileMenu.add(openItem);
+
+    // Set the menu bar on the JFrame
+    setJMenuBar(menuBar);
+  }
+
+  private void openFile() {
+    JFileChooser fileChooser = new JFileChooser();
+    FileNameExtensionFilter filter = new FileNameExtensionFilter("User Files (*.us)", "us");
+    fileChooser.setFileFilter(filter);
+    File projectDir = new File(System.getProperty("user.dir"));
+    fileChooser.setCurrentDirectory(projectDir);
+    int result = fileChooser.showOpenDialog(this);
+
+    if (result == JFileChooser.APPROVE_OPTION) {
+      File selectedFile = fileChooser.getSelectedFile();
+      new GUIStudent(selectedFile);
+    }
+
   }
 
   private JPanel createHomePanel() {
@@ -292,7 +336,7 @@ public class GUIStudent extends JFrame implements ActionListener {
 
       // Button to generate course projection plan
       JButton generateButton = new JButton("Generate Course Projection Plan");
-      generateButton.addActionListener(e -> generateGraduationPlanFromGUI(null));
+      generateButton.addActionListener(e -> generateGraduationPlanFromGUI(null, 0, -1));
       JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
       buttonPanel.add(generateButton);
       advisingPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -302,7 +346,8 @@ public class GUIStudent extends JFrame implements ActionListener {
   }
 
   // Method to extract user data from GUI and call projection plan method
-  private void generateGraduationPlanFromGUI(int[] summerPreferences) {
+  private void generateGraduationPlanFromGUI(int[] summerPreferences, int customSemesterNumber,
+      int customNumberOfCredits) {
     // Extract user data from user profile
     List<Course> completedCourses = user.getCompletedCourses();
     int completedSemesters = user.getNbSemestersCompleted();
@@ -317,7 +362,8 @@ public class GUIStudent extends JFrame implements ActionListener {
 
     // Call projection plan method from the GraduationPlanner class
     List<Semester> plan = GraduationPlanner.generateGraduationPlan(completedCourses, completedSemesters,
-        completedCredits, startSemester, summerPreferences);
+        completedCredits, startSemester, summerPreferences, customSemesterNumber,
+        customNumberOfCredits);
 
     // Check if the plan is not empty and display it
     if (plan != null && !plan.isEmpty()) {
@@ -419,14 +465,38 @@ public class GUIStudent extends JFrame implements ActionListener {
 
     if (selectedIndex >= 0) {
       int[] selectedCombination = summerCombinations.get(selectedIndex);
-      generateGraduationPlanFromGUI(selectedCombination);
+      generateGraduationPlanFromGUI(selectedCombination, 0, -1);
     } else {
       JOptionPane.showMessageDialog(null, "No selection was made.", "No Selection", JOptionPane.INFORMATION_MESSAGE);
     }
   }
 
   private void specifyCredits() {
-    // Implementation for specifying credits
+    JTextField semesterField = new JTextField(5);
+    JTextField creditsField = new JTextField(5);
+
+    JPanel myPanel = new JPanel();
+    myPanel.add(new JLabel("Semester Number:"));
+    myPanel.add(semesterField);
+    myPanel.add(Box.createHorizontalStrut(15)); // a spacer
+    myPanel.add(new JLabel("Number of Credits:"));
+    myPanel.add(creditsField);
+
+    int result = JOptionPane.showConfirmDialog(null, myPanel,
+        "Please Enter Semester Number and Credits", JOptionPane.OK_CANCEL_OPTION);
+    if (result == JOptionPane.OK_OPTION) {
+      try {
+        int semesterNumber = Integer.parseInt(semesterField.getText());
+        int numberOfCredits = Integer.parseInt(creditsField.getText());
+        // Validate the semester number and credits here
+        System.out.println("Semester: " + semesterNumber);
+        System.out.println("Credits: " + numberOfCredits);
+        // Proceed with using these inputs in your system
+        generateGraduationPlanFromGUI(null, semesterNumber - 1, numberOfCredits);
+      } catch (NumberFormatException e) {
+        JOptionPane.showMessageDialog(null, "Please enter valid numbers.", "Input Error", JOptionPane.ERROR_MESSAGE);
+      }
+    }
   }
 
   private void specifyCourses() {
