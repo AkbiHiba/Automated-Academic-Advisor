@@ -26,9 +26,6 @@ public class GraduationPlanner {
         public static final int MAJOR_CREDITS_SEMESTER_LIMIT = 13;
         public static List<Course> unavailableSummerCourses = new ArrayList<Course>();
 
-        // all above
-        public static Graph g;
-
         public static void main(String[] args) {
                 // assume all of these are taken from the user
                 List<Course> completedCourses = Arrays.asList();
@@ -43,12 +40,22 @@ public class GraduationPlanner {
                                 startSemester, null, customSemester, customCredits);
         }
 
+        public static List<Node> getNextLevelCourses(List<Course> completedCourses, int nextLevel) {
+                Init i = new Init(completedCourses);
+                Graph g = i.getGraph();
+                g.computeReachability();
+                g.levelizeGraph();
+                HashMap<Integer, List<Node>> map = g.computeLevelMap();
+                System.out.println(map);
+                return map.get(nextLevel);
+        }
+
         public static List<Semester> generateGraduationPlan(List<Course> completedCourses, int completedSemesters,
                         int completedCredits,
                         int startSemester, int[] semmerPreferencers, int customSemmester, int customCredits) {
                 // initialize graph
                 Init i = new Init(completedCourses);
-                g = i.getGraph();
+                Graph g = i.getGraph();
                 unavailableSummerCourses = i.getUnavailableSummerCourses();
                 // System.out.println(unavailableSummerCourses);
                 // compute reachability of the nodes

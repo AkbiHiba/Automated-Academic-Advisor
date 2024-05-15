@@ -68,13 +68,19 @@ public class GUI extends JFrame implements ActionListener {
     JPanel outerPanel = new JPanel(flowLayout);
     JPanel textPanel = new JPanel(new GridLayout(0, 1));
     textPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-    JLabel welcomeLabel = new JLabel("Welcome to the Automatic Academic Advisor");
-    textPanel.add(welcomeLabel);
-    JLabel optionLabel = new JLabel("To start, please select an option");
-    optionLabel.setFont(optionLabel.getFont().deriveFont(Font.PLAIN, 12));
-    textPanel.add(optionLabel);
-    outerPanel.add(textPanel);
-    homePanel.add(outerPanel, BorderLayout.NORTH);
+
+    // Main title and description
+    JLabel titleLabel = new JLabel("Welcome to the Automatic Academic Advisor");
+    titleLabel.setFont(new Font("Serif", Font.BOLD, 22));
+    titleLabel.setHorizontalAlignment(JLabel.CENTER);
+    textPanel.add(titleLabel, BorderLayout.CENTER);
+
+    JLabel descriptionLabel = new JLabel("To start, please select an option below:");
+    descriptionLabel.setFont(new Font("Serif", Font.PLAIN, 18));
+    descriptionLabel.setHorizontalAlignment(JLabel.CENTER);
+    textPanel.add(descriptionLabel, BorderLayout.SOUTH);
+
+    homePanel.add(textPanel, BorderLayout.NORTH);
 
     // copyright panel
     JPanel copyRightPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -166,11 +172,12 @@ public class GUI extends JFrame implements ActionListener {
 
   private JPanel createAboutPanel() {
     JPanel aboutPanel = new JPanel(new BorderLayout());
-    aboutPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+    aboutPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30)); // More balanced padding
 
+    // Using JTextPane for rich text formatting
     JTextPane textPane = new JTextPane();
-    textPane.setContentType("text/html");
-    textPane.setEditable(false);
+    textPane.setContentType("text/html"); // Set content type to HTML
+    textPane.setEditable(false); // Make it non-editable
     textPane.setText(
         "<html><body style='font-family: SansSerif; font-size: 12pt;'>" +
             "<h1>Welcome to the Automatic Academic Advisor</h1>" +

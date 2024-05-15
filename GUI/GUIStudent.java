@@ -2,6 +2,7 @@ package GUI;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -11,6 +12,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import java.awt.Component;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -28,7 +30,10 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.border.EmptyBorder;
-
+import javax.swing.DefaultListModel;
+import javax.swing.JList;
+import javax.swing.ListSelectionModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -455,10 +460,13 @@ public class GUIStudent extends JFrame implements ActionListener {
     int startSemester = user.getStartSemester().equals("FALL") ? 0 : 1;
     List<Semester> semesters = user.getProjection();
     int numOfRegularSemestersinPlan = semesters.stream().filter(s -> !s.isSummer()).mapToInt(s -> 1).sum();
-    numOfRegularSemestersinPlan += user.getNbSemestersCompleted();
 
+    // here we get the number of semesters already taken by the user ...
     int numOfSummerSemestersinPlan = (int) semesters.stream().filter(Semester::isSummer).count();
+    // the max number of summer in a any plan , so if we have 6 semester , the max
+    // is 2 wtc...
     int maxNumOfSummers = Semester.getMaxSummers(numOfRegularSemestersinPlan, startSemester);
+    // so the allowed number of summers the user can take:
     int allowedNumofSummers = maxNumOfSummers - numOfSummerSemestersinPlan;
 
     System.out.println(numOfRegularSemestersinPlan + " " + numOfSummerSemestersinPlan + " " + maxNumOfSummers + " "
@@ -466,6 +474,7 @@ public class GUIStudent extends JFrame implements ActionListener {
 
     List<int[]> summerCombinations = Semester.generateCombinations(maxNumOfSummers);
     String[] options = new String[summerCombinations.size()];
+
     for (int i = 0; i < summerCombinations.size(); i++) {
       int[] combination = summerCombinations.get(i);
       options[i] = Arrays.stream(combination)
@@ -515,7 +524,45 @@ public class GUIStudent extends JFrame implements ActionListener {
   }
 
   private void specifyCourses() {
-    // Implementation for specifying courses
+    // Get the next level courses based on the user's completed courses
+    List<Node> nextLevelCourses = GraduationPlanner.getNextLevelCourses(user.getCompletedCourses(), 0);
+
+    // Create a list model to hold these courses
+    DefaultListModel<Course> model = new DefaultListModel<>();
+    nextLevelCourses.stream().map(Node::getCourse).forEach(model::addElement);
+
+    // Setup the JList for course selection
+    JList<Course> courseList = new JList<>(model);
+    courseList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION); // Ensure multiple selections are
+                                                                                 // allowed
+
+    // Create a scroll pane to contain the list
+    JScrollPane listScroller = new JScrollPane(courseList);
+    listScroller.setPreferredSize(new Dimension(250, 80));
+
+    // Create a panel to hold the list and label
+    JPanel panel = new JPanel(new BorderLayout());
+    panel.add(listScroller, BorderLayout.CENTER);
+    panel.add(new JLabel("Select Courses for Next Semester:"), BorderLayout.NORTH);
+
+    // Add a note below the list
+    JLabel noteLabel = new JLabel(
+        "<html><body style='padding-top:5px'><i>Note: Make sure to check course availability for next semester.</i></body></html>");
+    panel.add(noteLabel, BorderLayout.SOUTH);
+
+    // Display a dialog for user to select courses
+    int result = JOptionPane.showConfirmDialog(null, panel, "Choose Courses for Next Semester",
+        JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+    if (result == JOptionPane.OK_OPTION) {
+      List<Course> selectedCourses = courseList.getSelectedValuesList();
+      List<Course> userCompletedCourses = user.getCompletedCourses();
+      userCompletedCourses.addAll(selectedCourses);
+      user.setCompletedCourses(userCompletedCourses);
+      generateGraduationPlanFromGUI(null, 0, -1);
+
+      // the user's academic plan
+      System.out.println("Selected Courses: " + selectedCourses);
+    }
   }
 
   private void displayErrorMessage(String message) {
